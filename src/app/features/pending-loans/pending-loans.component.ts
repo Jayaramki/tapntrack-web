@@ -13,6 +13,7 @@ import { AuthStore } from '../../core/stores/auth.store';
 import { PendingLoan } from '../../core/models/loan.model';
 import { Book } from '../../core/models/book.model';
 import { ResponsiveService } from '../../core/services/responsive.service';
+import { CardPaginatorComponent } from '../../shared/components/card-paginator/card-paginator.component';
 
 @Component({
   selector: 'app-pending-loans',
@@ -20,7 +21,7 @@ import { ResponsiveService } from '../../core/services/responsive.service';
   imports: [
     FormsModule, DecimalPipe, NgTemplateOutlet, RouterLink, TitleCasePipe,
     TableModule, ButtonModule, SelectModule,
-    TabsModule, TagModule, TooltipModule,
+    TabsModule, TagModule, TooltipModule, CardPaginatorComponent,
   ],
   styles: [`
     .page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
@@ -33,8 +34,6 @@ import { ResponsiveService } from '../../core/services/responsive.service';
     .legend-item { display: flex; align-items: center; gap: 6px; }
     .dot { width: 12px; height: 12px; border-radius: 50%; }
     .loan-cards { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
-    .card-paginator { display: flex; align-items: center; justify-content: space-between; padding: 12px 4px; margin-top: 4px; }
-    .card-page-info { font-size: 0.82rem; color: var(--p-text-muted-color); }
     .loan-card {
       background-color: #ffffff;
       background: var(--p-surface-card, #ffffff);
@@ -204,15 +203,8 @@ import { ResponsiveService } from '../../core/services/responsive.service';
               No pending loans for this type.
             </div>
           }
-          @if (pendingTotalPages(loans) > 1) {
-            <div class="card-paginator">
-              <p-button icon="pi pi-chevron-left" [text]="true" size="small"
-                        [disabled]="mobilePage() === 0" (onClick)="mobilePage.set(mobilePage() - 1)" />
-              <span class="card-page-info">Page {{ mobilePage() + 1 }} of {{ pendingTotalPages(loans) }}</span>
-              <p-button icon="pi pi-chevron-right" [text]="true" size="small"
-                        [disabled]="mobilePage() >= pendingTotalPages(loans) - 1" (onClick)="mobilePage.set(mobilePage() + 1)" />
-            </div>
-          }
+          <app-card-paginator [page]="mobilePage()" [totalPages]="pendingTotalPages(loans)"
+                              (pageChange)="mobilePage.set($event)" />
         </div>
       }
     </ng-template>

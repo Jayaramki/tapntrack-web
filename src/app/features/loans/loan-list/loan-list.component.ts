@@ -16,6 +16,7 @@ import { AuthStore } from '../../../core/stores/auth.store';
 import { Loan } from '../../../core/models/loan.model';
 import { Book } from '../../../core/models/book.model';
 import { ResponsiveService } from '../../../core/services/responsive.service';
+import { CardPaginatorComponent } from '../../../shared/components/card-paginator/card-paginator.component';
 
 @Component({
   selector: 'app-loan-list',
@@ -24,6 +25,7 @@ import { ResponsiveService } from '../../../core/services/responsive.service';
     RouterLink, FormsModule, DatePipe, DecimalPipe, TitleCasePipe,
     TableModule, ButtonModule, InputTextModule, SelectModule,
     TagModule, ToastModule, ConfirmDialogModule, TooltipModule,
+    CardPaginatorComponent,
   ],
   providers: [MessageService, ConfirmationService],
   styles: [`
@@ -33,8 +35,6 @@ import { ResponsiveService } from '../../../core/services/responsive.service';
     .table-wrap { overflow-x: auto; }
     .sub-nav { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
     .loan-cards { display: flex; flex-direction: column; gap: 10px; }
-    .card-paginator { display: flex; align-items: center; justify-content: space-between; padding: 12px 4px; margin-top: 4px; }
-    .card-page-info { font-size: 0.82rem; color: var(--p-text-muted-color); }
     .loan-card {
       background-color: #ffffff;
       background: var(--p-surface-card, #ffffff);
@@ -197,15 +197,8 @@ import { ResponsiveService } from '../../../core/services/responsive.service';
           @if (filtered().length === 0) {
             <div style="text-align:center;padding:48px 0;color:var(--p-text-muted-color)">No loans found.</div>
           }
-          @if (totalPages() > 1) {
-            <div class="card-paginator">
-              <p-button icon="pi pi-chevron-left" [text]="true" size="small"
-                        [disabled]="mobilePage() === 0" (onClick)="mobilePage.set(mobilePage() - 1)" />
-              <span class="card-page-info">Page {{ mobilePage() + 1 }} of {{ totalPages() }}</span>
-              <p-button icon="pi pi-chevron-right" [text]="true" size="small"
-                        [disabled]="mobilePage() >= totalPages() - 1" (onClick)="mobilePage.set(mobilePage() + 1)" />
-            </div>
-          }
+          <app-card-paginator [page]="mobilePage()" [totalPages]="totalPages()"
+                              (pageChange)="mobilePage.set($event)" />
         }
       </div>
     }
