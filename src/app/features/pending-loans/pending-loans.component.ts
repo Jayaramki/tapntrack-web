@@ -33,6 +33,8 @@ import { ResponsiveService } from '../../core/services/responsive.service';
     .legend-item { display: flex; align-items: center; gap: 6px; }
     .dot { width: 12px; height: 12px; border-radius: 50%; }
     .loan-cards { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+    .card-paginator { display: flex; align-items: center; justify-content: space-between; padding: 12px 4px; margin-top: 4px; }
+    .card-page-info { font-size: 0.82rem; color: var(--p-text-muted-color); }
     .loan-card {
       background-color: #ffffff;
       background: var(--p-surface-card, #ffffff);
@@ -165,7 +167,7 @@ import { ResponsiveService } from '../../core/services/responsive.service';
         </div>
       } @else {
         <div class="loan-cards">
-          @for (loan of loans; track loan.loan_number) {
+          @for (loan of pendingPagedLoans(loans); track loan.loan_number) {
             <div class="loan-card"
                  [class.overdue]="loan.act_pending_days > threshold"
                  [class.warning]="loan.act_pending_days > threshold * 0.7 && loan.act_pending_days <= threshold">
@@ -202,6 +204,15 @@ import { ResponsiveService } from '../../core/services/responsive.service';
               No pending loans for this type.
             </div>
           }
+          @if (pendingTotalPages(loans) > 1) {
+            <div class="card-paginator">
+              <p-button icon="pi pi-chevron-left" [text]="true" size="small"
+                        [disabled]="mobilePage() === 0" (onClick)="mobilePage.set(mobilePage() - 1)" />
+              <span class="card-page-info">Page {{ mobilePage() + 1 }} of {{ pendingTotalPages(loans) }}</span>
+              <p-button icon="pi pi-chevron-right" [text]="true" size="small"
+                        [disabled]="mobilePage() >= pendingTotalPages(loans) - 1" (onClick)="mobilePage.set(mobilePage() + 1)" />
+            </div>
+          }
         </div>
       }
     </ng-template>
@@ -219,6 +230,17 @@ export class PendingLoansComponent implements OnInit {
   protected readonly filterLine = signal('');
 
   protected readonly isSuperAdmin = computed(() => AuthStore.role() === 'super_admin');
+  protected readonly mobilePage = signal(0);
+  private readonly mobilePageSize = 10;
+
+  protected pendingTotalPages(loans: PendingLoan[]): number {
+    return Math.ceil(loans.length / this.mobilePageSize);
+  }
+
+  protected pendingPagedLoans(loans: PendingLoan[]): PendingLoan[] {
+    const start = this.mobilePage() * this.mobilePageSize;
+    return loans.slice(start, start + this.mobilePageSize);
+  }
 
   protected readonly lineOptions = ['line1','line2','line3','line4','line5','line6']
     .map(l => ({ label: l.replace('line', 'Line '), value: l }));
@@ -232,7 +254,7 @@ export class PendingLoansComponent implements OnInit {
   });
 
   protected onTabChange(val: string | number | undefined): void {
-    if (val != null) this.activeTab.set(String(val));
+    if (val != null) { this.activeTab.set(String(val)); this.mobilePage.set(0); }
   }
 
   protected countByType(type: string): string {

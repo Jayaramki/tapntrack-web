@@ -33,6 +33,8 @@ import { ResponsiveService } from '../../../core/services/responsive.service';
     .table-wrap { overflow-x: auto; }
     .sub-nav { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
     .loan-cards { display: flex; flex-direction: column; gap: 10px; }
+    .card-paginator { display: flex; align-items: center; justify-content: space-between; padding: 12px 4px; margin-top: 4px; }
+    .card-page-info { font-size: 0.82rem; color: var(--p-text-muted-color); }
     .loan-card {
       background-color: #ffffff;
       background: var(--p-surface-card, #ffffff);
@@ -153,7 +155,7 @@ import { ResponsiveService } from '../../../core/services/responsive.service';
         @if (loading()) {
           <div style="text-align:center;padding:48px 0"><i class="pi pi-spin pi-spinner" style="font-size:2rem"></i></div>
         } @else {
-          @for (loan of filtered(); track loan.id) {
+          @for (loan of pagedLoans(); track loan.id) {
             <div class="loan-card">
               <div class="loan-card-header">
                 <span class="loan-number">{{ loan.loan_number }}</span>
@@ -195,6 +197,15 @@ import { ResponsiveService } from '../../../core/services/responsive.service';
           @if (filtered().length === 0) {
             <div style="text-align:center;padding:48px 0;color:var(--p-text-muted-color)">No loans found.</div>
           }
+          @if (totalPages() > 1) {
+            <div class="card-paginator">
+              <p-button icon="pi pi-chevron-left" [text]="true" size="small"
+                        [disabled]="mobilePage() === 0" (onClick)="mobilePage.set(mobilePage() - 1)" />
+              <span class="card-page-info">Page {{ mobilePage() + 1 }} of {{ totalPages() }}</span>
+              <p-button icon="pi pi-chevron-right" [text]="true" size="small"
+                        [disabled]="mobilePage() >= totalPages() - 1" (onClick)="mobilePage.set(mobilePage() + 1)" />
+            </div>
+          }
         }
       </div>
     }
@@ -214,6 +225,8 @@ export class LoanListComponent implements OnInit {
   protected readonly filterType = signal('');
   protected readonly filterLine = signal('');
   protected readonly filterStatus = signal('');
+  protected readonly mobilePage = signal(0);
+  private readonly mobilePageSize = 10;
 
   protected readonly isSuperAdmin = computed(() => AuthStore.role() === 'super_admin');
 
@@ -244,6 +257,18 @@ export class LoanListComponent implements OnInit {
         || (status === 'active' && !l.completed_date);
       return matchSearch && matchType && matchLine && matchStatus;
     });
+  });
+
+  // Reset mobile page when filters change
+  protected readonly _ = computed(() => { this.filtered(); this.mobilePage.set(0); });
+
+  protected readonly totalPages = computed(() =>
+    Math.ceil(this.filtered().length / this.mobilePageSize)
+  );
+
+  protected readonly pagedLoans = computed(() => {
+    const start = this.mobilePage() * this.mobilePageSize;
+    return this.filtered().slice(start, start + this.mobilePageSize);
   });
 
   ngOnInit(): void {
