@@ -2,6 +2,7 @@
 
 # Compiled output
 /dist
+!/dist/tapntrack-web/browser
 /tmp
 /out-tsc
 /bazel-out

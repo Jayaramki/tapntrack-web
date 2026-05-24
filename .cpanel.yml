@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/tapntrac/public_html/app.tapntrack.in/
+    - /bin/cp -R dist/tapntrack-web/browser/. $DEPLOYPATH
