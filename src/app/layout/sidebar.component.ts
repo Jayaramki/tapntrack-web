@@ -119,8 +119,9 @@ const MENU_ITEMS: MenuItem[] = [
       position: fixed;
       bottom: 0; left: 0; right: 0;
       height: 60px;
-      background: var(--p-surface-card);
-      border-top: 1px solid var(--p-surface-border);
+      background-color: #ffffff;
+      background: var(--p-surface-card, #ffffff);
+      border-top: 1px solid var(--p-surface-border, #e2e8f0);
       display: flex;
       align-items: center;
       justify-content: space-around;
@@ -162,7 +163,8 @@ const MENU_ITEMS: MenuItem[] = [
       position: fixed;
       top: 0; left: 0; bottom: 0;
       width: 280px;
-      background: var(--p-surface-card);
+      background-color: #ffffff;
+      background: var(--p-surface-card, #ffffff);
       z-index: 201;
       display: flex;
       flex-direction: column;
@@ -181,8 +183,10 @@ const MENU_ITEMS: MenuItem[] = [
       align-items: center;
       justify-content: space-between;
       padding: 0 16px;
-      border-bottom: 1px solid var(--p-surface-border);
+      border-bottom: 1px solid var(--p-surface-border, #e2e8f0);
       flex-shrink: 0;
+      background-color: #ffffff;
+      background: var(--p-surface-card, #ffffff);
     }
     .drawer-brand {
       display: flex;
