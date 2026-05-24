@@ -15,15 +15,15 @@ import { DataService } from '../../../core/services/data.service';
 import { AuthStore } from '../../../core/stores/auth.store';
 import { Loan } from '../../../core/models/loan.model';
 import { Book } from '../../../core/models/book.model';
+import { ResponsiveService } from '../../../core/services/responsive.service';
 
 @Component({
   selector: 'app-loan-list',
   standalone: true,
   imports: [
-    RouterLink, FormsModule, DatePipe, DecimalPipe,
+    RouterLink, FormsModule, DatePipe, DecimalPipe, TitleCasePipe,
     TableModule, ButtonModule, InputTextModule, SelectModule,
     TagModule, ToastModule, ConfirmDialogModule, TooltipModule,
-    DatePipe, DecimalPipe, TitleCasePipe,
   ],
   providers: [MessageService, ConfirmationService],
   styles: [`
@@ -32,6 +32,20 @@ import { Book } from '../../../core/models/book.model';
     .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
     .table-wrap { overflow-x: auto; }
     .sub-nav { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .loan-cards { display: flex; flex-direction: column; gap: 10px; }
+    .loan-card {
+      background-color: #ffffff;
+      background: var(--p-surface-card, #ffffff);
+      border: 1px solid var(--p-surface-border, #e2e8f0);
+      border-radius: 10px; padding: 14px;
+    }
+    .loan-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .loan-number { font-family: monospace; font-size: 0.9rem; font-weight: 600; color: var(--p-primary-color); }
+    .loan-card-name { font-weight: 600; font-size: 1rem; margin-bottom: 6px; }
+    .loan-card-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; font-size: 0.82rem; color: var(--p-text-muted-color); }
+    .sep { color: var(--p-surface-border, #ccc); }
+    .loan-card-balance { font-size: 0.88rem; margin-bottom: 10px; }
+    .loan-card-actions { display: flex; gap: 4px; border-top: 1px solid var(--p-surface-border, #e2e8f0); padding-top: 8px; margin-top: 4px; }
   `],
   template: `
     <p-toast />
@@ -71,75 +85,126 @@ import { Book } from '../../../core/models/book.model';
                 placeholder="All Status" [showClear]="true" styleClass="min-w-36" />
     </div>
 
-    <div class="table-wrap">
-      <p-table [value]="filtered()" [loading]="loading()" [paginator]="true" [rows]="15"
-               [rowsPerPageOptions]="[10,15,25]" stripedRows
-               [tableStyle]="{'min-width':'820px'}" responsiveLayout="scroll">
-        <ng-template pTemplate="header">
-          <tr>
-            <th pSortableColumn="loan_number">Loan # <p-sortIcon field="loan_number" /></th>
-            <th pSortableColumn="customer_name">Customer <p-sortIcon field="customer_name" /></th>
-            <th pSortableColumn="loan_amount" class="hidden md:table-cell">Amount <p-sortIcon field="loan_amount" /></th>
-            <th class="hidden md:table-cell">Type</th>
-            <th class="hidden lg:table-cell">Line</th>
-            <th pSortableColumn="issued_date" class="hidden lg:table-cell">Issued <p-sortIcon field="issued_date" /></th>
-            <th pSortableColumn="remaining_balance">Balance <p-sortIcon field="remaining_balance" /></th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-loan>
-          <tr>
-            <td><span class="font-mono text-sm">{{ loan.loan_number }}</span></td>
-            <td>{{ loan.customer_name }}</td>
-            <td class="hidden md:table-cell">₹{{ loan.loan_amount | number }}</td>
-            <td class="hidden md:table-cell">
-              <p-tag [value]="loan.loan_type" [severity]="typeSeverity(loan.loan_type)"
-                     styleClass="capitalize" />
-            </td>
-            <td class="hidden lg:table-cell">{{ loan.line | titlecase }}</td>
-            <td class="hidden lg:table-cell">{{ loan.issued_date | date:'dd/MM/yyyy' }}</td>
-            <td [style]="(loan.remaining_balance ?? 0) <= 0 ? 'color:var(--p-green-600);font-weight:600' : ''">
-              ₹{{ (loan.remaining_balance ?? 0) | number }}
-            </td>
-            <td>
-              @if (loan.completed_date) {
-                <p-tag value="Completed" severity="success" />
-              } @else {
-                <p-tag value="Active" severity="info" />
-              }
-            </td>
-            <td>
-              <div class="flex gap-1">
-                <p-button icon="pi pi-eye" [text]="true" [rounded]="true" severity="secondary"
+    @if (!responsive.isMobile()) {
+      <div class="table-wrap">
+        <p-table [value]="filtered()" [loading]="loading()" [paginator]="true" [rows]="15"
+                 [rowsPerPageOptions]="[10,15,25]" stripedRows
+                 [tableStyle]="{'min-width':'820px'}" responsiveLayout="scroll">
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="loan_number">Loan # <p-sortIcon field="loan_number" /></th>
+              <th pSortableColumn="customer_name">Customer <p-sortIcon field="customer_name" /></th>
+              <th pSortableColumn="loan_amount" class="hidden md:table-cell">Amount <p-sortIcon field="loan_amount" /></th>
+              <th class="hidden md:table-cell">Type</th>
+              <th class="hidden lg:table-cell">Line</th>
+              <th pSortableColumn="issued_date" class="hidden lg:table-cell">Issued <p-sortIcon field="issued_date" /></th>
+              <th pSortableColumn="remaining_balance">Balance <p-sortIcon field="remaining_balance" /></th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-loan>
+            <tr>
+              <td><span class="font-mono text-sm">{{ loan.loan_number }}</span></td>
+              <td>{{ loan.customer_name }}</td>
+              <td class="hidden md:table-cell">&#8377;{{ loan.loan_amount | number }}</td>
+              <td class="hidden md:table-cell">
+                <p-tag [value]="loan.loan_type" [severity]="typeSeverity(loan.loan_type)" styleClass="capitalize" />
+              </td>
+              <td class="hidden lg:table-cell">{{ loan.line | titlecase }}</td>
+              <td class="hidden lg:table-cell">{{ loan.issued_date | date:'dd/MM/yyyy' }}</td>
+              <td [style]="(loan.remaining_balance ?? 0) <= 0 ? 'color:var(--p-green-600);font-weight:600' : ''">
+                &#8377;{{ (loan.remaining_balance ?? 0) | number }}
+              </td>
+              <td>
+                @if (loan.completed_date) {
+                  <p-tag value="Completed" severity="success" />
+                } @else {
+                  <p-tag value="Active" severity="info" />
+                }
+              </td>
+              <td>
+                <div class="flex gap-1">
+                  <p-button icon="pi pi-eye" [text]="true" [rounded]="true" severity="secondary"
+                            pTooltip="View" [routerLink]="['/loans', loan.id]" />
+                  <p-button icon="pi pi-pencil" [text]="true" [rounded]="true" severity="info"
+                            pTooltip="Edit" [routerLink]="['/loans', loan.id, 'edit']" />
+                  @if (loan.completed_date) {
+                    <p-button icon="pi pi-box" [text]="true" [rounded]="true" severity="warn"
+                              pTooltip="Archive" (onClick)="onArchive(loan)" />
+                  }
+                  <p-button icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger"
+                            pTooltip="Delete" (onClick)="onDelete(loan)" />
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="9" class="text-center py-8" style="color:var(--p-text-muted-color)">
+                No loans found.
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    } @else {
+      <div class="loan-cards">
+        @if (loading()) {
+          <div style="text-align:center;padding:48px 0"><i class="pi pi-spin pi-spinner" style="font-size:2rem"></i></div>
+        } @else {
+          @for (loan of filtered(); track loan.id) {
+            <div class="loan-card">
+              <div class="loan-card-header">
+                <span class="loan-number">{{ loan.loan_number }}</span>
+                @if (loan.completed_date) {
+                  <p-tag value="Completed" severity="success" />
+                } @else {
+                  <p-tag value="Active" severity="info" />
+                }
+              </div>
+              <div class="loan-card-name">{{ loan.customer_name }}</div>
+              <div class="loan-card-meta">
+                <span>&#8377;{{ loan.loan_amount | number }}</span>
+                <span class="sep">·</span>
+                <p-tag [value]="loan.loan_type" [severity]="typeSeverity(loan.loan_type)" styleClass="capitalize" />
+                <span class="sep">·</span>
+                <span>{{ loan.line | titlecase }}</span>
+                <span class="sep">·</span>
+                <span>{{ loan.issued_date | date:'dd/MM/yy' }}</span>
+              </div>
+              <div class="loan-card-balance">
+                Balance: <strong [style]="(loan.remaining_balance ?? 0) <= 0 ? 'color:var(--p-green-600)' : ''">
+                  &#8377;{{ (loan.remaining_balance ?? 0) | number }}
+                </strong>
+              </div>
+              <div class="loan-card-actions">
+                <p-button icon="pi pi-eye" [text]="true" size="small" severity="secondary"
                           pTooltip="View" [routerLink]="['/loans', loan.id]" />
-                <p-button icon="pi pi-pencil" [text]="true" [rounded]="true" severity="info"
+                <p-button icon="pi pi-pencil" [text]="true" size="small" severity="info"
                           pTooltip="Edit" [routerLink]="['/loans', loan.id, 'edit']" />
                 @if (loan.completed_date) {
-                  <p-button icon="pi pi-box" [text]="true" [rounded]="true" severity="warn"
+                  <p-button icon="pi pi-box" [text]="true" size="small" severity="warn"
                             pTooltip="Archive" (onClick)="onArchive(loan)" />
                 }
-                <p-button icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger"
+                <p-button icon="pi pi-trash" [text]="true" size="small" severity="danger"
                           pTooltip="Delete" (onClick)="onDelete(loan)" />
               </div>
-            </td>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="9" class="text-center py-8" style="color:var(--p-text-muted-color)">
-              No loans found.
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </div>
+            </div>
+          }
+          @if (filtered().length === 0) {
+            <div style="text-align:center;padding:48px 0;color:var(--p-text-muted-color)">No loans found.</div>
+          }
+        }
+      </div>
+    }
   `,
 })
 export class LoanListComponent implements OnInit {
   private readonly data = inject(DataService);
   private readonly toastSvc = inject(MessageService);
   private readonly confirmSvc = inject(ConfirmationService);
+  protected readonly responsive = inject(ResponsiveService);
 
   protected readonly loading = signal(true);
   protected readonly loans = signal<Loan[]>([]);
@@ -239,4 +304,3 @@ export class LoanListComponent implements OnInit {
     });
   }
 }
-

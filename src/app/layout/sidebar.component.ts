@@ -16,7 +16,7 @@ const MENU_ITEMS: MenuItem[] = [
   { label: 'Dashboard',    shortLabel: 'Home',    icon: 'pi pi-home',         route: '/dashboard',    permission: 'view-dashboard' },
   { label: 'Books',        shortLabel: 'Books',   icon: 'pi pi-building',     route: '/books',        permission: 'manage-books' },
   { label: 'Users',        shortLabel: 'Users',   icon: 'pi pi-users',        route: '/users',        permission: 'manage-users' },
-  { label: 'Customers',    shortLabel: 'People',  icon: 'pi pi-user',         route: '/customers',    permission: 'manage-customers' },
+  { label: 'Customers',    shortLabel: 'Customers',icon: 'pi pi-user',         route: '/customers',    permission: 'manage-customers' },
   { label: 'Loans',        shortLabel: 'Loans',   icon: 'pi pi-credit-card',  route: '/loans',        permission: 'view-loans' },
   { label: 'Pending',      shortLabel: 'Pending', icon: 'pi pi-clock',        route: '/pending-loans',permission: 'view-pending-loans' },
   { label: 'Daily Entry',  shortLabel: 'Entry',   icon: 'pi pi-plus-circle',  route: '/daily-entry',  permission: 'record-collection' },
@@ -120,7 +120,6 @@ const MENU_ITEMS: MenuItem[] = [
       bottom: 0; left: 0; right: 0;
       height: 60px;
       background-color: #ffffff;
-      background: var(--p-surface-card, #ffffff);
       border-top: 1px solid var(--p-surface-border, #e2e8f0);
       display: flex;
       align-items: center;
@@ -164,7 +163,6 @@ const MENU_ITEMS: MenuItem[] = [
       top: 0; left: 0; bottom: 0;
       width: 280px;
       background-color: #ffffff;
-      background: var(--p-surface-card, #ffffff);
       z-index: 201;
       display: flex;
       flex-direction: column;
@@ -186,7 +184,6 @@ const MENU_ITEMS: MenuItem[] = [
       border-bottom: 1px solid var(--p-surface-border, #e2e8f0);
       flex-shrink: 0;
       background-color: #ffffff;
-      background: var(--p-surface-card, #ffffff);
     }
     .drawer-brand {
       display: flex;

@@ -8,7 +8,7 @@ import { ButtonModule } from 'primeng/button';
   styles: [`
     .install-banner {
       position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
-      background: var(--p-surface-card); border: 1px solid var(--p-surface-border);
+      background-color: #ffffff; border: 1px solid var(--p-surface-border, #e2e8f0);
       border-radius: 14px; padding: 12px 16px;
       display: flex; align-items: center; gap: 12px;
       box-shadow: 0 8px 24px rgba(0,0,0,.18); z-index: 1000;
@@ -29,10 +29,16 @@ import { ButtonModule } from 'primeng/button';
         <span class="banner-icon">📲</span>
         <div class="banner-text">
           <strong>Add to Home Screen</strong>
-          <small>Install TapNTrack for quick access</small>
+          @if (isIos()) {
+            <small>Tap <b>Share</b> then <b>Add to Home Screen</b></small>
+          } @else {
+            <small>Install TapNTrack for quick access</small>
+          }
         </div>
         <div class="banner-actions">
-          <p-button label="Install" size="small" (onClick)="install()"></p-button>
+          @if (!isIos()) {
+            <p-button label="Install" size="small" (onClick)="install()"></p-button>
+          }
           <p-button icon="pi pi-times" [text]="true" size="small" severity="secondary" (onClick)="dismiss()"></p-button>
         </div>
       </div>
@@ -41,11 +47,22 @@ import { ButtonModule } from 'primeng/button';
 })
 export class InstallBannerComponent implements OnInit {
   showBanner = signal(false);
+  isIos = signal(false);
   private deferredPrompt: any = null;
 
   ngOnInit() {
     if (window.matchMedia('(display-mode: standalone)').matches) return;
     if (sessionStorage.getItem('pwa-banner-dismissed')) return;
+
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    this.isIos.set(ios);
+
+    if (ios) {
+      setTimeout(() => this.showBanner.set(true), 3000);
+      return;
+    }
+
     window.addEventListener('beforeinstallprompt', (e: Event) => {
       e.preventDefault();
       this.deferredPrompt = e;

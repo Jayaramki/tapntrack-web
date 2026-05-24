@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DatePipe, CurrencyPipe } from '@angular/common';
@@ -45,6 +45,13 @@ import { forkJoin } from 'rxjs';
     .cat-badge   { display:inline-flex; align-items:center; gap:4px; padding:2px 8px;
                    border-radius:12px; font-size:0.76rem; font-weight:600; }
     .empty-state { text-align:center; padding:48px 0; color:var(--p-text-muted-color); }
+    @media (max-width: 767px) {
+      .col-category, .col-status { display: none; }
+      .desc-meta { display: inline-flex; margin-left: 6px; }
+    }
+    @media (min-width: 768px) {
+      .desc-meta { display: none; }
+    }
   `],
   template: `
     <p-toast />
@@ -107,9 +114,9 @@ import { forkJoin } from 'rxjs';
           <tr>
             <th>Date</th>
             <th>Description</th>
-            <th>Category</th>
+            <th class="col-category">Category</th>
             <th class="amount-col">Amount</th>
-            <th>Status</th>
+            <th class="col-status">Status</th>
             <th class="actions-col">Actions</th>
           </tr>
         </thead>
@@ -119,8 +126,15 @@ import { forkJoin } from 'rxjs';
               <td style="white-space:nowrap;color:var(--p-text-muted-color);font-size:0.82rem">
                 {{ exp.expense_date | date:'d MMM yyyy' }}
               </td>
-              <td>{{ exp.description }}</td>
               <td>
+                {{ exp.description }}
+                <span class="desc-meta cat-badge"
+                      [style.background]="catColor(exp.category) + '22'"
+                      [style.color]="catColor(exp.category)">
+                  {{ exp.category }}
+                </span>
+              </td>
+              <td class="col-category">
                 <span class="cat-badge"
                       [style.background]="catColor(exp.category) + '22'"
                       [style.color]="catColor(exp.category)">
@@ -128,7 +142,7 @@ import { forkJoin } from 'rxjs';
                 </span>
               </td>
               <td class="amount-col">{{ exp.amount | currency:'INR':'symbol':'1.0-0' }}</td>
-              <td>
+              <td class="col-status">
                 <p-tag [value]="exp.is_active ? 'Active' : 'Inactive'"
                        [severity]="exp.is_active ? 'success' : 'secondary'" />
               </td>
@@ -254,5 +268,3 @@ export class ExpenseListComponent implements OnInit {
     });
   }
 }
-
-

@@ -66,8 +66,8 @@ interface EntryRow {
     /* Sticky footer */
     .sticky-footer {
       position: fixed; bottom: 64px; left: 0; right: 0;
-      background: var(--p-surface-card);
-      border-top: 2px solid var(--p-surface-border);
+      background-color: #ffffff;
+      border-top: 2px solid var(--p-surface-border, #e2e8f0);
       padding: 10px 16px;
       display: flex; justify-content: space-between; align-items: center;
       gap: 12px; flex-wrap: wrap; z-index: 100;
