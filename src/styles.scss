@@ -1,0 +1,26 @@
+@use "tailwindcss";
+
+/* PrimeIcons */
+@import "primeicons/primeicons.css";
+
+/* Global resets & base */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: var(--p-font-family, system-ui, sans-serif);
+  background-color: var(--p-surface-ground);
+  color: var(--p-text-color);
+}
+
+/* AG Grid — popup editors must float above pinned columns inside the grid */
+.ag-root-wrapper .ag-popup {
+  z-index: 200 !important;
+}
+.ag-root-wrapper .ag-popup-editor {
+  z-index: 200 !important;
+}
+

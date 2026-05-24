@@ -1,0 +1,212 @@
+import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { SelectModule } from 'primeng/select';
+import { TabsModule } from 'primeng/tabs';
+import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
+import { DataService } from '../../core/services/data.service';
+import { AuthStore } from '../../core/stores/auth.store';
+import { PendingLoan } from '../../core/models/loan.model';
+import { Book } from '../../core/models/book.model';
+
+@Component({
+  selector: 'app-pending-loans',
+  standalone: true,
+  imports: [
+    FormsModule, DecimalPipe, NgTemplateOutlet, RouterLink,
+    TableModule, ButtonModule, SelectModule,
+    TabsModule, TagModule, TooltipModule,
+  ],
+  styles: [`
+    .page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+    .page-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+    .table-wrap { overflow-x: auto; }
+    .row-overdue td { background: var(--p-red-50) !important; }
+    .row-warning td { background: var(--p-yellow-50) !important; }
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; font-size: 0.8rem; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+  `],
+  template: `
+    <div class="page-header">
+      <h1 class="page-title">Pending Loans</h1>
+    </div>
+
+    @if (isSuperAdmin()) {
+      <div style="margin-bottom: 16px; max-width: 280px;">
+        <p-select [options]="books()" optionLabel="name" optionValue="id"
+                  [ngModel]="selectedBookId()" (ngModelChange)="onBookChange($event)"
+                  placeholder="Select Book" styleClass="w-full" />
+      </div>
+    }
+
+    <div class="filters">
+      <p-select [options]="lineOptions" optionLabel="label" optionValue="value"
+                [ngModel]="filterLine()" (ngModelChange)="filterLine.set($event ?? '')"
+                placeholder="All Lines" [showClear]="true" styleClass="min-w-36" />
+      <span style="font-size:0.85rem; color:var(--p-text-muted-color)">
+        {{ activeTabLoans().length }} loan(s)
+      </span>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="dot" style="background:var(--p-red-200)"></div>
+        <span>Overdue (daily &gt;3d / weekly &gt;14d / monthly &gt;60d)</span>
+      </div>
+      <div class="legend-item">
+        <div class="dot" style="background:var(--p-yellow-200)"></div>
+        <span>Approaching threshold</span>
+      </div>
+    </div>
+
+    <p-tabs [value]="activeTab()" (valueChange)="onTabChange($event)">
+      <p-tablist>
+        <p-tab value="daily">
+          Daily <p-tag [value]="countByType('daily')" severity="info" styleClass="ml-2" />
+        </p-tab>
+        <p-tab value="weekly">
+          Weekly <p-tag [value]="countByType('weekly')" severity="success" styleClass="ml-2" />
+        </p-tab>
+        <p-tab value="monthly">
+          Monthly <p-tag [value]="countByType('monthly')" severity="warn" styleClass="ml-2" />
+        </p-tab>
+      </p-tablist>
+
+      <p-tabpanels>
+        <p-tabpanel value="daily">
+          <ng-container *ngTemplateOutlet="loanTable; context: { $implicit: activeTabLoans(), threshold: 3 }" />
+        </p-tabpanel>
+        <p-tabpanel value="weekly">
+          <ng-container *ngTemplateOutlet="loanTable; context: { $implicit: activeTabLoans(), threshold: 14 }" />
+        </p-tabpanel>
+        <p-tabpanel value="monthly">
+          <ng-container *ngTemplateOutlet="loanTable; context: { $implicit: activeTabLoans(), threshold: 60 }" />
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+
+    <ng-template #loanTable let-loans let-threshold="threshold">
+      <div class="table-wrap" style="margin-top:8px">
+        <p-table [value]="loans" [loading]="loading()" [paginator]="true" [rows]="15"
+                 [rowsPerPageOptions]="[10,15,25]"
+                 [tableStyle]="{'min-width':'700px'}" responsiveLayout="scroll"
+                 sortField="act_pending_days" [sortOrder]="-1">
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="loan_number">Loan # <p-sortIcon field="loan_number" /></th>
+              <th pSortableColumn="customer_name">Customer <p-sortIcon field="customer_name" /></th>
+              <th class="hidden md:table-cell">Line</th>
+              <th pSortableColumn="issued_date" class="hidden lg:table-cell">Issued <p-sortIcon field="issued_date" /></th>
+              <th pSortableColumn="act_pending_days">Days Pending <p-sortIcon field="act_pending_days" /></th>
+              <th pSortableColumn="remaining_balance">Balance <p-sortIcon field="remaining_balance" /></th>
+              <th>Status</th>
+              <th class="hidden md:table-cell">Action</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-loan>
+            <tr [class]="rowClass(loan, threshold)">
+              <td><span class="font-mono text-sm">{{ loan.loan_number }}</span></td>
+              <td>{{ loan.customer_name }}</td>
+              <td class="hidden md:table-cell">{{ loan.line }}</td>
+              <td class="hidden lg:table-cell">{{ loan.issued_date }}</td>
+              <td>
+                <span [style]="loan.is_overdue ? 'color:var(--p-red-600);font-weight:700' : ''">
+                  {{ loan.act_pending_days }}d
+                </span>
+              </td>
+              <td>₹{{ (loan.remaining_balance ?? 0) | number }}</td>
+              <td>
+                @if (loan.is_overdue) {
+                  <p-tag value="Overdue" severity="danger" />
+                } @else {
+                  <p-tag value="Pending" severity="warn" />
+                }
+              </td>
+              <td class="hidden md:table-cell">
+                <p-button icon="pi pi-eye" [text]="true" [rounded]="true" severity="info"
+                          pTooltip="View Loan" [routerLink]="['/loans', loan.id]" />
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="8" class="text-center py-8" style="color:var(--p-text-muted-color)">
+                No pending loans for this type. 🎉
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </ng-template>
+  `,
+})
+export class PendingLoansComponent implements OnInit {
+  private readonly data = inject(DataService);
+
+  protected readonly loading = signal(true);
+  protected readonly allPending = signal<PendingLoan[]>([]);
+  protected readonly books = signal<Book[]>([]);
+  protected readonly selectedBookId = signal<number>(AuthStore.bookId() ?? 1);
+  protected readonly activeTab = signal<string>('daily');
+  protected readonly filterLine = signal('');
+
+  protected readonly isSuperAdmin = computed(() => AuthStore.role() === 'super_admin');
+
+  protected readonly lineOptions = ['line1','line2','line3','line4','line5','line6']
+    .map(l => ({ label: l.replace('line', 'Line '), value: l }));
+
+  protected readonly activeTabLoans = computed(() => {
+    const type = this.activeTab();
+    const line = this.filterLine();
+    return this.allPending().filter(l =>
+      l.loan_type === type && (!line || l.line === line)
+    );
+  });
+
+  protected onTabChange(val: string | number | undefined): void {
+    if (val != null) this.activeTab.set(String(val));
+  }
+
+  protected countByType(type: string): string {
+    return String(this.allPending().filter(l => l.loan_type === type).length);
+  }
+
+  protected rowClass(loan: PendingLoan, threshold: number): string {
+    if (loan.act_pending_days > threshold) return 'row-overdue';
+    if (loan.act_pending_days > threshold * 0.7) return 'row-warning';
+    return '';
+  }
+
+  ngOnInit(): void {
+    if (this.isSuperAdmin()) {
+      this.data.books.getAll().subscribe(r => {
+        this.books.set(r.data);
+        if (r.data.length) this.selectedBookId.set(r.data[0].id);
+        this.loadPending();
+      });
+    } else {
+      this.loadPending();
+    }
+  }
+
+  protected onBookChange(id: number): void {
+    this.selectedBookId.set(id);
+    this.loadPending();
+  }
+
+  private loadPending(): void {
+    this.loading.set(true);
+    const bookId = this.isSuperAdmin() ? this.selectedBookId() : (AuthStore.bookId() ?? 1);
+    this.data.loans.getPending(bookId).subscribe(r => {
+      this.allPending.set(r.data);
+      this.loading.set(false);
+    });
+  }
+}
+

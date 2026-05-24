@@ -1,0 +1,351 @@
+import { Component, computed, input, output, inject } from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
+import { TooltipModule } from 'primeng/tooltip';
+import { AuthStore } from '../core/stores/auth.store';
+import { ResponsiveService } from '../core/services/responsive.service';
+
+interface MenuItem {
+  label: string;
+  shortLabel: string;
+  icon: string;
+  route: string;
+  permission: string;
+}
+
+const MENU_ITEMS: MenuItem[] = [
+  { label: 'Dashboard',    shortLabel: 'Home',    icon: 'pi pi-home',         route: '/dashboard',    permission: 'view-dashboard' },
+  { label: 'Books',        shortLabel: 'Books',   icon: 'pi pi-building',     route: '/books',        permission: 'manage-books' },
+  { label: 'Users',        shortLabel: 'Users',   icon: 'pi pi-users',        route: '/users',        permission: 'manage-users' },
+  { label: 'Customers',    shortLabel: 'People',  icon: 'pi pi-user',         route: '/customers',    permission: 'manage-customers' },
+  { label: 'Loans',        shortLabel: 'Loans',   icon: 'pi pi-credit-card',  route: '/loans',        permission: 'view-loans' },
+  { label: 'Pending',      shortLabel: 'Pending', icon: 'pi pi-clock',        route: '/pending-loans',permission: 'view-pending-loans' },
+  { label: 'Daily Entry',  shortLabel: 'Entry',   icon: 'pi pi-plus-circle',  route: '/daily-entry',  permission: 'record-collection' },
+  { label: 'Day Summary',  shortLabel: 'Summary', icon: 'pi pi-chart-bar',    route: '/day-summary',  permission: 'view-day-summary' },
+  { label: 'Ledger',       shortLabel: 'Ledger',  icon: 'pi pi-table',        route: '/ledger',       permission: 'view-ledger' },
+  { label: 'Expenses',     shortLabel: 'Expense', icon: 'pi pi-wallet',       route: '/expenses',     permission: 'manage-expenses' },
+  { label: 'Reports',      shortLabel: 'Reports', icon: 'pi pi-chart-line',   route: '/reports',      permission: 'view-reports' },
+  { label: 'Settings',     shortLabel: 'Settings',icon: 'pi pi-cog',          route: '/settings',     permission: 'manage-settings' },
+];
+
+@Component({
+  selector: 'app-sidebar',
+  standalone: true,
+  imports: [RouterLink, RouterLinkActive, TooltipModule],
+  styles: [`
+    :host { display: contents; }
+
+    .sidebar {
+      width: 240px;
+      min-width: 240px;
+      background: var(--p-surface-card);
+      border-right: 1px solid var(--p-surface-border);
+      transition: width 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    .sidebar.collapsed {
+      width: 64px;
+      min-width: 64px;
+    }
+
+    .sidebar-brand {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 10px;
+      border-bottom: 1px solid var(--p-surface-border);
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--p-primary-color);
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .brand-icon { font-size: 1.25rem; }
+
+    .menu-list {
+      list-style: none;
+      margin: 0;
+      padding: 8px 0;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .menu-item a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      color: var(--p-text-color);
+      text-decoration: none;
+      border-radius: 6px;
+      margin: 1px 8px;
+      transition: background 0.15s;
+      white-space: nowrap;
+      overflow: hidden;
+      font-size: 0.9rem;
+    }
+    .menu-item a:hover {
+      background: var(--p-content-hover-background);
+    }
+    .menu-item a.active-link {
+      background: var(--p-primary-50);
+      color: var(--p-primary-color);
+      font-weight: 600;
+    }
+    .menu-item i { font-size: 1rem; min-width: 1rem; }
+
+    .sidebar-footer {
+      padding: 8px;
+      border-top: 1px solid var(--p-surface-border);
+    }
+    .sidebar-footer a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 8px;
+      color: var(--p-text-color);
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      transition: background 0.15s;
+    }
+    .sidebar-footer a:hover { background: var(--p-content-hover-background); }
+    .sidebar-footer a.active-link { color: var(--p-primary-color); font-weight: 600; }
+
+    /* Bottom nav (mobile) */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 60px;
+      background: var(--p-surface-card);
+      border-top: 1px solid var(--p-surface-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 100;
+      padding: 0 4px;
+    }
+    .bottom-nav-item a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 8px;
+      color: var(--p-text-muted-color);
+      text-decoration: none;
+      border-radius: 8px;
+      min-width: 52px;
+      font-size: 0.65rem;
+      transition: color 0.15s;
+    }
+    .bottom-nav-item a.active-link {
+      color: var(--p-primary-color);
+    }
+    .bottom-nav-item i { font-size: 1.1rem; }
+
+    /* Mobile drawer overlay */
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 200;
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .drawer {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 280px;
+      background: var(--p-surface-card);
+      z-index: 201;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+      animation: slideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes slideIn {
+      from { transform: translateX(-100%); }
+      to   { transform: translateX(0); }
+    }
+
+    .drawer-header {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--p-surface-border);
+      flex-shrink: 0;
+    }
+    .drawer-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--p-primary-color);
+    }
+    .drawer-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--p-text-muted-color);
+      font-size: 1.1rem;
+      padding: 6px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .drawer-close:hover {
+      background: var(--p-content-hover-background);
+      color: var(--p-text-color);
+    }
+
+    .drawer-menu {
+      list-style: none;
+      margin: 0;
+      padding: 8px 0;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .drawer-menu li a {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 13px 20px;
+      color: var(--p-text-color);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: background 0.15s;
+    }
+    .drawer-menu li a:hover {
+      background: var(--p-content-hover-background);
+    }
+    .drawer-menu li a.active-link {
+      background: var(--p-primary-50);
+      color: var(--p-primary-color);
+      font-weight: 600;
+    }
+    .drawer-menu li a i { font-size: 1.15rem; min-width: 1.15rem; }
+
+    .drawer-footer {
+      padding: 8px 0;
+      border-top: 1px solid var(--p-surface-border);
+    }
+    .drawer-footer a {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 13px 20px;
+      color: var(--p-text-color);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: background 0.15s;
+    }
+    .drawer-footer a:hover { background: var(--p-content-hover-background); }
+    .drawer-footer a.active-link { color: var(--p-primary-color); font-weight: 600; }
+  `],
+  template: `
+    <!-- Desktop / Tablet Sidebar -->
+    @if (!responsive.isMobile()) {
+      <aside class="sidebar" [class.collapsed]="collapsed()">
+        <div class="sidebar-brand">
+          <i class="pi pi-bolt brand-icon"></i>
+          @if (!collapsed()) { <span>TapNTrack</span> }
+        </div>
+
+        <ul class="menu-list">
+          @for (item of visibleItems(); track item.route) {
+            <li class="menu-item">
+              <a [routerLink]="item.route" routerLinkActive="active-link"
+                 [pTooltip]="collapsed() ? item.label : ''" tooltipPosition="right">
+                <i [class]="item.icon"></i>
+                @if (!collapsed()) { <span>{{ item.label }}</span> }
+              </a>
+            </li>
+          }
+        </ul>
+
+        <div class="sidebar-footer">
+          <a routerLink="/profile" routerLinkActive="active-link"
+             [pTooltip]="collapsed() ? 'Profile' : ''" tooltipPosition="right">
+            <i class="pi pi-user"></i>
+            @if (!collapsed()) { <span>Profile</span> }
+          </a>
+        </div>
+      </aside>
+    }
+
+    <!-- Mobile Bottom Navigation -->
+    @if (responsive.isMobile()) {
+      <nav class="bottom-nav">
+        @for (item of bottomNavItems(); track item.route) {
+          <div class="bottom-nav-item">
+            <a [routerLink]="item.route" routerLinkActive="active-link">
+              <i [class]="item.icon"></i>
+              <span>{{ item.shortLabel }}</span>
+            </a>
+          </div>
+        }
+      </nav>
+
+      <!-- Mobile slide-in drawer -->
+      @if (drawerOpen()) {
+        <div class="drawer-backdrop" (click)="drawerClose.emit()"></div>
+        <div class="drawer">
+          <div class="drawer-header">
+            <div class="drawer-brand">
+              <i class="pi pi-bolt brand-icon"></i>
+              <span>TapNTrack</span>
+            </div>
+            <button class="drawer-close" (click)="drawerClose.emit()">
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+
+          <ul class="drawer-menu">
+            @for (item of visibleItems(); track item.route) {
+              <li>
+                <a [routerLink]="item.route" routerLinkActive="active-link"
+                   (click)="drawerClose.emit()">
+                  <i [class]="item.icon"></i>
+                  <span>{{ item.label }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+
+          <div class="drawer-footer">
+            <a routerLink="/profile" routerLinkActive="active-link"
+               (click)="drawerClose.emit()">
+              <i class="pi pi-user"></i>
+              <span>Profile</span>
+            </a>
+          </div>
+        </div>
+      }
+    }
+  `,
+})
+export class SidebarComponent {
+  collapsed = input<boolean>(false);
+  drawerOpen = input<boolean>(false);
+  drawerClose = output<void>();
+
+  protected readonly responsive = inject(ResponsiveService);
+
+  protected readonly visibleItems = computed(() =>
+    MENU_ITEMS.filter(item => AuthStore.hasPermission(item.permission))
+  );
+
+  // Show max 5 items in bottom nav (most relevant for the role)
+  protected readonly bottomNavItems = computed(() => this.visibleItems().slice(0, 5));
+}

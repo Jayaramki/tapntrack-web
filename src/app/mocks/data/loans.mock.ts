@@ -1,0 +1,42 @@
+import { Loan, ArchiveLoan } from '../../core/models/loan.model';
+
+export const MOCK_LOANS: Loan[] = [
+  // Book 1 — Chennai Branch — 10 active loans
+  { id: 1,  book_id: 1, customer_id: 1, loan_number: 'CHN-001', loan_amount: 10000, interest_amount: 2000, loan_type: 'daily',   line: 'line1', issued_date: '2026-01-05', completed_date: null, is_deleted: false, created_at: '2026-01-05T00:00:00Z', updated_at: '2026-01-05T00:00:00Z' },
+  { id: 2,  book_id: 1, customer_id: 2, loan_number: 'CHN-002', loan_amount: 15000, interest_amount: 3000, loan_type: 'daily',   line: 'line1', issued_date: '2026-01-10', completed_date: null, is_deleted: false, created_at: '2026-01-10T00:00:00Z', updated_at: '2026-01-10T00:00:00Z' },
+  { id: 3,  book_id: 1, customer_id: 3, loan_number: 'CHN-003', loan_amount: 20000, interest_amount: 4000, loan_type: 'daily',   line: 'line2', issued_date: '2026-01-15', completed_date: null, is_deleted: false, created_at: '2026-01-15T00:00:00Z', updated_at: '2026-01-15T00:00:00Z' },
+  { id: 4,  book_id: 1, customer_id: 4, loan_number: 'CHN-004', loan_amount: 8000,  interest_amount: 1600, loan_type: 'weekly',  line: 'line2', issued_date: '2026-02-01', completed_date: null, is_deleted: false, created_at: '2026-02-01T00:00:00Z', updated_at: '2026-02-01T00:00:00Z' },
+  { id: 5,  book_id: 1, customer_id: 5, loan_number: 'CHN-005', loan_amount: 25000, interest_amount: 5000, loan_type: 'daily',   line: 'line3', issued_date: '2026-02-05', completed_date: null, is_deleted: false, created_at: '2026-02-05T00:00:00Z', updated_at: '2026-02-05T00:00:00Z' },
+  { id: 6,  book_id: 1, customer_id: 6, loan_number: 'CHN-006', loan_amount: 12000, interest_amount: 2400, loan_type: 'daily',   line: 'line3', issued_date: '2026-02-10', completed_date: null, is_deleted: false, created_at: '2026-02-10T00:00:00Z', updated_at: '2026-02-10T00:00:00Z' },
+  { id: 7,  book_id: 1, customer_id: 7, loan_number: 'CHN-007', loan_amount: 30000, interest_amount: 6000, loan_type: 'monthly', line: 'line4', issued_date: '2026-02-15', completed_date: null, is_deleted: false, created_at: '2026-02-15T00:00:00Z', updated_at: '2026-02-15T00:00:00Z' },
+  { id: 8,  book_id: 1, customer_id: 8, loan_number: 'CHN-008', loan_amount: 18000, interest_amount: 3600, loan_type: 'daily',   line: 'line4', issued_date: '2026-03-01', completed_date: null, is_deleted: false, created_at: '2026-03-01T00:00:00Z', updated_at: '2026-03-01T00:00:00Z' },
+  { id: 9,  book_id: 1, customer_id: 9, loan_number: 'CHN-009', loan_amount: 5000,  interest_amount: 1000, loan_type: 'weekly',  line: 'line5', issued_date: '2026-03-10', completed_date: null, is_deleted: false, created_at: '2026-03-10T00:00:00Z', updated_at: '2026-03-10T00:00:00Z' },
+  { id: 10, book_id: 1, customer_id: 1, loan_number: 'CHN-010', loan_amount: 40000, interest_amount: 8000, loan_type: 'daily',   line: 'line6', issued_date: '2026-04-01', completed_date: null, is_deleted: false, created_at: '2026-04-01T00:00:00Z', updated_at: '2026-04-01T00:00:00Z' },
+
+  // Book 1 — 2 soft-deleted loans
+  { id: 11, book_id: 1, customer_id: 2, loan_number: 'CHN-D01', loan_amount: 5000,  interest_amount: 1000, loan_type: 'daily',   line: 'line1', issued_date: '2025-10-01', completed_date: null, is_deleted: true, created_at: '2025-10-01T00:00:00Z', updated_at: '2025-11-01T00:00:00Z' },
+  { id: 12, book_id: 1, customer_id: 3, loan_number: 'CHN-D02', loan_amount: 10000, interest_amount: 2000, loan_type: 'weekly',  line: 'line2', issued_date: '2025-09-01', completed_date: null, is_deleted: true, created_at: '2025-09-01T00:00:00Z', updated_at: '2025-10-01T00:00:00Z' },
+
+  // Book 2 — Madurai Branch — 10 active loans
+  { id: 13, book_id: 2, customer_id: 11, loan_number: 'MDU-001', loan_amount: 10000, interest_amount: 2000, loan_type: 'daily',   line: 'line1', issued_date: '2026-01-10', completed_date: null, is_deleted: false, created_at: '2026-01-10T00:00:00Z', updated_at: '2026-01-10T00:00:00Z' },
+  { id: 14, book_id: 2, customer_id: 12, loan_number: 'MDU-002', loan_amount: 20000, interest_amount: 4000, loan_type: 'daily',   line: 'line1', issued_date: '2026-01-15', completed_date: null, is_deleted: false, created_at: '2026-01-15T00:00:00Z', updated_at: '2026-01-15T00:00:00Z' },
+  { id: 15, book_id: 2, customer_id: 13, loan_number: 'MDU-003', loan_amount: 15000, interest_amount: 3000, loan_type: 'weekly',  line: 'line2', issued_date: '2026-01-20', completed_date: null, is_deleted: false, created_at: '2026-01-20T00:00:00Z', updated_at: '2026-01-20T00:00:00Z' },
+  { id: 16, book_id: 2, customer_id: 14, loan_number: 'MDU-004', loan_amount: 8000,  interest_amount: 1600, loan_type: 'daily',   line: 'line2', issued_date: '2026-02-01', completed_date: null, is_deleted: false, created_at: '2026-02-01T00:00:00Z', updated_at: '2026-02-01T00:00:00Z' },
+  { id: 17, book_id: 2, customer_id: 15, loan_number: 'MDU-005', loan_amount: 25000, interest_amount: 5000, loan_type: 'daily',   line: 'line3', issued_date: '2026-02-10', completed_date: null, is_deleted: false, created_at: '2026-02-10T00:00:00Z', updated_at: '2026-02-10T00:00:00Z' },
+  { id: 18, book_id: 2, customer_id: 16, loan_number: 'MDU-006', loan_amount: 12000, interest_amount: 2400, loan_type: 'daily',   line: 'line3', issued_date: '2026-02-15', completed_date: null, is_deleted: false, created_at: '2026-02-15T00:00:00Z', updated_at: '2026-02-15T00:00:00Z' },
+  { id: 19, book_id: 2, customer_id: 17, loan_number: 'MDU-007', loan_amount: 35000, interest_amount: 7000, loan_type: 'monthly', line: 'line4', issued_date: '2026-02-20', completed_date: null, is_deleted: false, created_at: '2026-02-20T00:00:00Z', updated_at: '2026-02-20T00:00:00Z' },
+  { id: 20, book_id: 2, customer_id: 18, loan_number: 'MDU-008', loan_amount: 18000, interest_amount: 3600, loan_type: 'daily',   line: 'line5', issued_date: '2026-03-05', completed_date: null, is_deleted: false, created_at: '2026-03-05T00:00:00Z', updated_at: '2026-03-05T00:00:00Z' },
+  { id: 21, book_id: 2, customer_id: 19, loan_number: 'MDU-009', loan_amount: 6000,  interest_amount: 1200, loan_type: 'weekly',  line: 'line5', issued_date: '2026-03-15', completed_date: null, is_deleted: false, created_at: '2026-03-15T00:00:00Z', updated_at: '2026-03-15T00:00:00Z' },
+  { id: 22, book_id: 2, customer_id: 20, loan_number: 'MDU-010', loan_amount: 50000, interest_amount: 10000, loan_type: 'daily',  line: 'line6', issued_date: '2026-04-01', completed_date: null, is_deleted: false, created_at: '2026-04-01T00:00:00Z', updated_at: '2026-04-01T00:00:00Z' },
+
+  // Book 2 — 2 soft-deleted loans
+  { id: 23, book_id: 2, customer_id: 11, loan_number: 'MDU-D01', loan_amount: 8000,  interest_amount: 1600, loan_type: 'daily',   line: 'line1', issued_date: '2025-11-01', completed_date: null, is_deleted: true, created_at: '2025-11-01T00:00:00Z', updated_at: '2025-12-01T00:00:00Z' },
+  { id: 24, book_id: 2, customer_id: 12, loan_number: 'MDU-D02', loan_amount: 15000, interest_amount: 3000, loan_type: 'weekly',  line: 'line2', issued_date: '2025-10-01', completed_date: null, is_deleted: true, created_at: '2025-10-01T00:00:00Z', updated_at: '2025-11-01T00:00:00Z' },
+];
+
+export const MOCK_ARCHIVE_LOANS: ArchiveLoan[] = [
+  { id: 101, book_id: 1, customer_id: 4, loan_number: 'CHN-A01', loan_amount: 5000,  interest_amount: 1000, loan_type: 'daily',  line: 'line1', issued_date: '2025-06-01', completed_date: '2025-08-20', created_at: '2025-06-01T00:00:00Z', updated_at: '2025-08-20T00:00:00Z', archived_at: '2025-08-25T00:00:00Z' },
+  { id: 102, book_id: 1, customer_id: 5, loan_number: 'CHN-A02', loan_amount: 12000, interest_amount: 2400, loan_type: 'weekly', line: 'line2', issued_date: '2025-05-01', completed_date: '2025-10-15', created_at: '2025-05-01T00:00:00Z', updated_at: '2025-10-15T00:00:00Z', archived_at: '2025-10-20T00:00:00Z' },
+  { id: 103, book_id: 2, customer_id: 13, loan_number: 'MDU-A01', loan_amount: 8000,  interest_amount: 1600, loan_type: 'daily',  line: 'line1', issued_date: '2025-07-01', completed_date: '2025-09-10', created_at: '2025-07-01T00:00:00Z', updated_at: '2025-09-10T00:00:00Z', archived_at: '2025-09-15T00:00:00Z' },
+  { id: 104, book_id: 2, customer_id: 14, loan_number: 'MDU-A02', loan_amount: 20000, interest_amount: 4000, loan_type: 'daily',  line: 'line3', issued_date: '2025-04-01', completed_date: '2025-12-01', created_at: '2025-04-01T00:00:00Z', updated_at: '2025-12-01T00:00:00Z', archived_at: '2025-12-05T00:00:00Z' },
+];
