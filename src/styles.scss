@@ -16,6 +16,16 @@ html, body {
   color: var(--p-text-color);
 }
 
+/* Compact table font sizes to match app body text */
+.p-datatable .p-datatable-thead > tr > th {
+  font-size: 0.78rem;
+  padding: 8px 12px;
+}
+.p-datatable .p-datatable-tbody > tr > td {
+  font-size: 0.85rem;
+  padding: 8px 12px;
+}
+
 /* AG Grid — popup editors must float above pinned columns inside the grid */
 .ag-root-wrapper .ag-popup {
   z-index: 200 !important;
