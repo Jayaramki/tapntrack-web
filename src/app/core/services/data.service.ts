@@ -4,6 +4,7 @@ import { environment } from '../../../environments/environment';
 // Auth
 import { BaseAuthService } from '../services/base-auth.service';
 import { MockAuthService } from '../../mocks/services/mock-auth.service';
+import { HttpAuthService } from '../services/http-auth.service';
 
 // Book
 import { BaseBookService } from '../services/base-book.service';
@@ -35,8 +36,8 @@ import { MockSettingsService, MockDashboardService, MockReportsService } from '.
 
 /**
  * DataService acts as a service locator.
- * When environment.useMocks is true, it returns mock implementations.
- * When false, it returns real HTTP implementations (to be added in a future task).
+ * Auth can be routed to the backend when environment.useApiAuth is enabled.
+ * Other domains remain mocked until their HTTP services are implemented.
  *
  * Usage in components:
  *   private data = inject(DataService);
@@ -57,32 +58,23 @@ export class DataService {
   readonly reports: BaseReportsService;
 
   constructor() {
-    if (environment.useMocks) {
+    if (environment.useApiAuth) {
+      this.auth = inject(HttpAuthService);
+    } else if (environment.useMocks) {
       this.auth = inject(MockAuthService);
-      this.books = inject(MockBookService);
-      this.users = inject(MockUserService);
-      this.customers = inject(MockCustomerService);
-      this.loans = inject(MockLoanService);
-      this.dailyEntries = inject(MockDailyEntryService);
-      this.ledger = inject(MockLedgerService);
-      this.expenses = inject(MockExpenseService);
-      this.settings = inject(MockSettingsService);
-      this.dashboard = inject(MockDashboardService);
-      this.reports = inject(MockReportsService);
     } else {
-      // Real HTTP services — to be implemented when Laravel backend is ready
-      // Replace each line below with inject(HttpXxxService) once created
       this.auth = inject(MockAuthService);
-      this.books = inject(MockBookService);
-      this.users = inject(MockUserService);
-      this.customers = inject(MockCustomerService);
-      this.loans = inject(MockLoanService);
-      this.dailyEntries = inject(MockDailyEntryService);
-      this.ledger = inject(MockLedgerService);
-      this.expenses = inject(MockExpenseService);
-      this.settings = inject(MockSettingsService);
-      this.dashboard = inject(MockDashboardService);
-      this.reports = inject(MockReportsService);
     }
+
+    this.books = inject(MockBookService);
+    this.users = inject(MockUserService);
+    this.customers = inject(MockCustomerService);
+    this.loans = inject(MockLoanService);
+    this.dailyEntries = inject(MockDailyEntryService);
+    this.ledger = inject(MockLedgerService);
+    this.expenses = inject(MockExpenseService);
+    this.settings = inject(MockSettingsService);
+    this.dashboard = inject(MockDashboardService);
+    this.reports = inject(MockReportsService);
   }
 }
