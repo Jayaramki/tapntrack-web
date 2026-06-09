@@ -1,7 +1,11 @@
 # See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
 # Compiled output
-/dist
+# Ignore dist, but keep the deployed browser build tracked. Each level of the
+# path must be re-included for the negation to apply to new files inside.
+/dist/*
+!/dist/tapntrack-web
+/dist/tapntrack-web/*
 !/dist/tapntrack-web/browser
 /tmp
 /out-tsc
