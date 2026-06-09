@@ -9,6 +9,7 @@ import { HttpAuthService } from '../services/http-auth.service';
 // Book
 import { BaseBookService } from '../services/base-book.service';
 import { MockBookService } from '../../mocks/services/mock-book.service';
+import { HttpBookService } from '../services/http-book.service';
 
 // User
 import { BaseUserService } from '../services/base-user.service';
@@ -33,6 +34,7 @@ import { MockExpenseService } from '../../mocks/services/mock-expense.service';
 // Settings, Dashboard, Reports
 import { BaseSettingsService, BaseDashboardService, BaseReportsService } from '../services/base-settings.service';
 import { MockSettingsService, MockDashboardService, MockReportsService } from '../../mocks/services/mock-settings.service';
+import { HttpSettingsService } from '../services/http-settings.service';
 
 /**
  * DataService acts as a service locator.
@@ -66,14 +68,14 @@ export class DataService {
       this.auth = inject(MockAuthService);
     }
 
-    this.books = inject(MockBookService);
+    this.books = environment.useMocks ? inject(MockBookService) : inject(HttpBookService);
     this.users = inject(MockUserService);
     this.customers = inject(MockCustomerService);
     this.loans = inject(MockLoanService);
     this.dailyEntries = inject(MockDailyEntryService);
     this.ledger = inject(MockLedgerService);
     this.expenses = inject(MockExpenseService);
-    this.settings = inject(MockSettingsService);
+    this.settings = environment.useMocks ? inject(MockSettingsService) : inject(HttpSettingsService);
     this.dashboard = inject(MockDashboardService);
     this.reports = inject(MockReportsService);
   }
