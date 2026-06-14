@@ -57,9 +57,8 @@ import { AuthStore } from '../../../core/stores/auth.store';
             <div class="field">
               <label>Name <span style="color:var(--p-red-500)">*</span></label>
               <input pInputText formControlName="name"
-                     placeholder="Full name (Tamil supported)"
+                     placeholder="Full name"
                      class="w-full" [class.ng-invalid]="isInvalid('name')" />
-              <div class="hint">Supports Tamil Unicode input</div>
               @if (isInvalid('name')) {
                 <div class="field-error">Name is required (2–100 chars).</div>
               }
@@ -68,7 +67,7 @@ import { AuthStore } from '../../../core/stores/auth.store';
             <div class="field">
               <label>Father Name <span style="color:var(--p-red-500)">*</span></label>
               <input pInputText formControlName="father_name"
-                     placeholder="Father's name (Tamil supported)"
+                     placeholder="Father's name"
                      class="w-full" [class.ng-invalid]="isInvalid('father_name')" />
               @if (isInvalid('father_name')) {
                 <div class="field-error">Father name is required (2–100 chars).</div>
