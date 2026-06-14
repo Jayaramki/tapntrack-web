@@ -18,6 +18,7 @@ import { MockUserService } from '../../mocks/services/mock-user.service';
 // Customer
 import { BaseCustomerService } from '../services/base-customer.service';
 import { MockCustomerService } from '../../mocks/services/mock-customer.service';
+import { HttpCustomerService } from '../services/http-customer.service';
 
 // Loan
 import { BaseLoanService } from '../services/base-loan.service';
@@ -70,7 +71,7 @@ export class DataService {
 
     this.books = environment.useMocks ? inject(MockBookService) : inject(HttpBookService);
     this.users = inject(MockUserService);
-    this.customers = inject(MockCustomerService);
+    this.customers = environment.useMocks ? inject(MockCustomerService) : inject(HttpCustomerService);
     this.loans = inject(MockLoanService);
     this.dailyEntries = inject(MockDailyEntryService);
     this.ledger = inject(MockLedgerService);

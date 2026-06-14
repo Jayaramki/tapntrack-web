@@ -1,0 +1,42 @@
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { ApiResponse } from '../models/api-response.model';
+import { Customer, CreateCustomerRequest, UpdateCustomerRequest } from '../models/customer.model';
+import { BaseCustomerService } from './base-customer.service';
+
+@Injectable({ providedIn: 'root' })
+export class HttpCustomerService extends BaseCustomerService {
+  private readonly url = `${environment.apiUrl}/customers`;
+
+  constructor(private readonly http: HttpClient) {
+    super();
+  }
+
+  getAll(book_id: number): Observable<ApiResponse<Customer[]>> {
+    return this.http.get<ApiResponse<Customer[]>>(this.url, { params: { book_id } });
+  }
+
+  getById(id: number): Observable<ApiResponse<Customer>> {
+    return this.http.get<ApiResponse<Customer>>(`${this.url}/${id}`);
+  }
+
+  search(book_id: number, query: string): Observable<ApiResponse<Customer[]>> {
+    return this.http.get<ApiResponse<Customer[]>>(this.url, {
+      params: { book_id, search: query },
+    });
+  }
+
+  create(data: CreateCustomerRequest): Observable<ApiResponse<Customer>> {
+    return this.http.post<ApiResponse<Customer>>(this.url, data);
+  }
+
+  update(id: number, data: UpdateCustomerRequest): Observable<ApiResponse<Customer>> {
+    return this.http.put<ApiResponse<Customer>>(`${this.url}/${id}`, data);
+  }
+
+  toggleActive(id: number): Observable<ApiResponse<Customer>> {
+    return this.http.patch<ApiResponse<Customer>>(`${this.url}/${id}/toggle-status`, {});
+  }
+}
