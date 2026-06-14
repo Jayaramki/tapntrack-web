@@ -93,7 +93,7 @@ export class BookFormComponent implements OnInit {
 
   protected readonly saving = signal(false);
   protected readonly loadError = signal<string | null>(null);
-  protected readonly bookId = signal<number | null>(null);
+  protected readonly bookId = signal<string | null>(null);
   protected readonly isEdit = computed(() => this.bookId() !== null);
 
   protected readonly form = this.fb.group({
@@ -104,8 +104,8 @@ export class BookFormComponent implements OnInit {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.bookId.set(Number(id));
-      this.data.books.getById(Number(id)).subscribe({
+      this.bookId.set(id);
+      this.data.books.getById(id).subscribe({
         next: (res) => this.form.patchValue({ name: res.data.name, is_active: res.data.is_active }),
         error: () => this.loadError.set('Book not found.'),
       });

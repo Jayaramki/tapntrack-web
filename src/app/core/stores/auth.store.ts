@@ -1,9 +1,13 @@
 import { signal, computed } from '@angular/core';
 import { AuthUser } from '../models/user.model';
+import { DEFAULT_BOOK_ID } from '../config/app.constants';
 
 const _authUser = signal<AuthUser | null>(null);
 
 export const AuthStore = {
+  /** Book-context fallback for super_admin on selector-less screens (former `?? 1`). */
+  DEFAULT_BOOK_ID,
+
   user: computed(() => _authUser()),
   isAuthenticated: computed(() => !!_authUser()),
   role: computed(() => _authUser()?.role ?? null),

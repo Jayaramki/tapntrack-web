@@ -1,8 +1,8 @@
 export type UserRole = 'super_admin' | 'book_admin' | 'field_agent';
 
 export interface User {
-  id: number;
-  book_id: number | null;
+  id: string;
+  book_id: string | null;
   first_name: string;
   last_name: string;
   username: string;

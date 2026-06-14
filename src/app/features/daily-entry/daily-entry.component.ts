@@ -456,7 +456,7 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
     if (!this.selectedLine) return;
     if (this.multiDateMode() && !this.selectedDatesArr.length) return;
     this.loading.set(true);
-    const bookId = AuthStore.bookId() ?? 1;
+    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
 
     this.data.loans.getAll(bookId).subscribe(loansRes => {
       const loans = loansRes.data.filter(l => l.line === this.selectedLine && !l.completed_date);
@@ -477,7 +477,7 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
           dates.map(d => this.data.dailyEntries.getByDate(bookId, d));
 
         forkJoin(dateChecks).subscribe(results => {
-          const coverageMap = new Map<number, string[]>();
+          const coverageMap = new Map<string, string[]>();
           results.forEach((res, i) => {
             res.data.forEach(e => {
               if (!coverageMap.has(e.loan_id)) coverageMap.set(e.loan_id, []);
@@ -499,7 +499,7 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
   protected onSaveRow(row: EntryRow): void {
     if (!row.amount || row.amount <= 0) return;
     row.saving = true;
-    const bookId = AuthStore.bookId() ?? 1;
+    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     this.data.dailyEntries.create({
       book_id: bookId, loan_id: row.loan.id,
       entry_date: this.toDateStr(this.selectedDate), amount: row.amount, mode: row.mode,
@@ -513,7 +513,7 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
   }
 
   protected onSubmitAll(): void {
-    const bookId = AuthStore.bookId() ?? 1;
+    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
 
     if (!this.multiDateMode()) {
       const pending = this.rows().filter(r => !r.existingEntry && r.amount && r.amount > 0);

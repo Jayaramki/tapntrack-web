@@ -14,13 +14,13 @@ export class HttpSettingsService extends BaseSettingsService {
     super();
   }
 
-  getAll(book_id: number): Observable<ApiResponse<AppSetting[]>> {
+  getAll(book_id: string): Observable<ApiResponse<AppSetting[]>> {
     return this.http.get<ApiResponse<AppSetting[]>>(this.url, {
       params: { book_id },
     });
   }
 
-  update(book_id: number, data: UpdateSettingRequest): Observable<ApiResponse<AppSetting>> {
+  update(book_id: string, data: UpdateSettingRequest): Observable<ApiResponse<AppSetting>> {
     return this.http.put<ApiResponse<AppSetting>>(this.url, { book_id, ...data });
   }
 }

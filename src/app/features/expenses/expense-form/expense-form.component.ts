@@ -120,7 +120,7 @@ export class ExpenseFormComponent implements OnInit {
 
   protected catOptions: { label: string; value: string; color: string }[] = [];
   protected isEdit    = false;
-  private   expenseId: number | null = null;
+  private   expenseId: string | null = null;
   protected readonly today = new Date();
 
   protected form: FormGroup = this.fb.group({
@@ -132,12 +132,12 @@ export class ExpenseFormComponent implements OnInit {
 
   ngOnInit(): void {
     const id     = this.route.snapshot.paramMap.get('id');
-    const bookId = AuthStore.bookId() ?? 1;
+    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     this.loading.set(true);
 
     if (id) {
       this.isEdit    = true;
-      this.expenseId = Number(id);
+      this.expenseId = id;
       forkJoin([
         this.data.expenses.getById(this.expenseId),
         this.data.expenses.getCategories(bookId),
@@ -165,7 +165,7 @@ export class ExpenseFormComponent implements OnInit {
     this.saving.set(true);
 
     const v      = this.form.value;
-    const bookId = AuthStore.bookId() ?? 1;
+    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     const dateStr = (v.expense_date as Date).toISOString().split('T')[0];
 
     const payload = {

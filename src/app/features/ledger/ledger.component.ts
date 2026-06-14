@@ -171,7 +171,7 @@ export class LedgerComponent implements OnInit {
 
   protected loadLedger(): void {
     this.loading.set(true);
-    const bookId = AuthStore.bookId() ?? 1;
+    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     this.data.ledger.getLedger(bookId, this.selectedYear, this.selectedMonth).subscribe(res => {
       this.ledgerData.set(res.data);
       this.colDefs = this.buildColDefs(res.data);
@@ -393,7 +393,7 @@ export class LedgerComponent implements OnInit {
 
     const oldCell = event.oldValue as LedgerCell | null;
     const newCell = event.newValue as LedgerCell | null;
-    const bookId  = AuthStore.bookId() ?? 1;
+    const bookId  = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
 
     const oldAmt = oldCell?.amount ?? 0;
     const newAmt = newCell?.amount ?? 0;

@@ -19,19 +19,19 @@ function enrichEntry(entry: DailyEntry): DailyEntry {
 export class MockDailyEntryService extends BaseDailyEntryService {
   private entries: DailyEntry[] = [...MOCK_DAILY_ENTRIES];
 
-  getByLoan(loan_id: number): Observable<ApiResponse<DailyEntry[]>> {
+  getByLoan(loan_id: string): Observable<ApiResponse<DailyEntry[]>> {
     const result = this.entries.filter(e => e.loan_id === loan_id).map(enrichEntry);
     return of({ success: true, data: result }).pipe(delay(200));
   }
 
-  getByDate(book_id: number, date: string): Observable<ApiResponse<DailyEntry[]>> {
+  getByDate(book_id: string, date: string): Observable<ApiResponse<DailyEntry[]>> {
     const result = this.entries.filter(e => e.book_id === book_id && e.entry_date === date).map(enrichEntry);
     return of({ success: true, data: result }).pipe(delay(200));
   }
 
   create(data: CreateDailyEntryRequest): Observable<ApiResponse<DailyEntry>> {
     const newEntry: DailyEntry = {
-      id: Math.max(...this.entries.map(e => e.id)) + 1,
+      id: crypto.randomUUID(),
       ...data,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -43,7 +43,7 @@ export class MockDailyEntryService extends BaseDailyEntryService {
   bulkCreate(data: BulkDailyEntryRequest): Observable<ApiResponse<DailyEntry[]>> {
     const created: DailyEntry[] = data.entries.map((item, i) => {
       const entry: DailyEntry = {
-        id: Math.max(...this.entries.map(e => e.id)) + 1 + i,
+        id: crypto.randomUUID(),
         book_id: data.book_id,
         loan_id: item.loan_id,
         entry_date: data.entry_date,
@@ -58,18 +58,18 @@ export class MockDailyEntryService extends BaseDailyEntryService {
     return of({ success: true, data: created, message: `${created.length} entries recorded` }).pipe(delay(400));
   }
 
-  update(id: number, data: Partial<CreateDailyEntryRequest>): Observable<ApiResponse<DailyEntry>> {
+  update(id: string, data: Partial<CreateDailyEntryRequest>): Observable<ApiResponse<DailyEntry>> {
     const idx = this.entries.findIndex(e => e.id === id);
     this.entries[idx] = { ...this.entries[idx], ...data, updated_at: new Date().toISOString() };
     return of({ success: true, data: enrichEntry(this.entries[idx]) }).pipe(delay(300));
   }
 
-  delete(id: number): Observable<ApiResponse<null>> {
+  delete(id: string): Observable<ApiResponse<null>> {
     this.entries = this.entries.filter(e => e.id !== id);
     return of({ success: true, data: null, message: 'Entry deleted' }).pipe(delay(200));
   }
 
-  getDaySummary(book_id: number, date: string): Observable<ApiResponse<DaySummary>> {
+  getDaySummary(book_id: string, date: string): Observable<ApiResponse<DaySummary>> {
     const dayEntries = this.entries.filter(e => e.book_id === book_id && e.entry_date === date).map(enrichEntry);
     const totalCash = dayEntries.filter(e => e.mode === 'cash').reduce((s, e) => s + e.amount, 0);
     const totalGpay = dayEntries.filter(e => e.mode === 'gpay').reduce((s, e) => s + e.amount, 0);
@@ -94,7 +94,7 @@ export class MockDailyEntryService extends BaseDailyEntryService {
 export class MockLedgerService extends BaseLedgerService {
   private entries: DailyEntry[] = [...MOCK_DAILY_ENTRIES];
 
-  getLedger(book_id: number, year: number, month: number): Observable<ApiResponse<LedgerData>> {
+  getLedger(book_id: string, year: number, month: number): Observable<ApiResponse<LedgerData>> {
     const daysInMonth = new Date(year, month, 0).getDate();
     const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 

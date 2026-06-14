@@ -14,14 +14,14 @@ export class MockBookService extends BaseBookService {
     return of({ success: true, data: this.books.filter(b => !b.is_deleted) }).pipe(delay(200));
   }
 
-  getById(id: number): Observable<ApiResponse<Book>> {
+  getById(id: string): Observable<ApiResponse<Book>> {
     const book = this.books.find(b => b.id === id);
     return of({ success: true, data: book! }).pipe(delay(200));
   }
 
   create(data: CreateBookRequest): Observable<ApiResponse<Book>> {
     const newBook: Book = {
-      id: Math.max(...this.books.map(b => b.id)) + 1,
+      id: crypto.randomUUID(),
       name: data.name,
       is_active: data.is_active,
       is_deleted: false,
@@ -32,19 +32,19 @@ export class MockBookService extends BaseBookService {
     return of({ success: true, data: newBook, message: 'Book created successfully' }).pipe(delay(300));
   }
 
-  update(id: number, data: UpdateBookRequest): Observable<ApiResponse<Book>> {
+  update(id: string, data: UpdateBookRequest): Observable<ApiResponse<Book>> {
     const idx = this.books.findIndex(b => b.id === id);
     this.books[idx] = { ...this.books[idx], ...data, updated_at: new Date().toISOString() };
     return of({ success: true, data: this.books[idx], message: 'Book updated successfully' }).pipe(delay(300));
   }
 
-  toggleActive(id: number): Observable<ApiResponse<Book>> {
+  toggleActive(id: string): Observable<ApiResponse<Book>> {
     const idx = this.books.findIndex(b => b.id === id);
     this.books[idx] = { ...this.books[idx], is_active: !this.books[idx].is_active, updated_at: new Date().toISOString() };
     return of({ success: true, data: this.books[idx] }).pipe(delay(200));
   }
 
-  delete(id: number): Observable<ApiResponse<null>> {
+  delete(id: string): Observable<ApiResponse<null>> {
     const idx = this.books.findIndex(b => b.id === id);
     this.books[idx] = { ...this.books[idx], is_deleted: true, updated_at: new Date().toISOString() };
     return of({ success: true, data: null, message: 'Book deleted successfully' }).pipe(delay(200));

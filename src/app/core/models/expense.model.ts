@@ -1,14 +1,14 @@
 export interface ExpenseCategoryConfig {
-  id: number;
-  book_id: number;
+  id: string;
+  book_id: string;
   name: string;
   color: string;
   is_active: boolean;
 }
 
 export interface Expense {
-  id: number;
-  book_id: number;
+  id: string;
+  book_id: string;
   expense_date: string;
   description: string;
   category: string;       // free string — matches ExpenseCategoryConfig.name
@@ -19,7 +19,7 @@ export interface Expense {
 }
 
 export interface CreateExpenseRequest {
-  book_id: number;
+  book_id: string;
   expense_date: string;
   description: string;
   category: string;
@@ -29,7 +29,7 @@ export interface CreateExpenseRequest {
 export type UpdateExpenseRequest = Partial<CreateExpenseRequest>;
 
 export interface CreateExpenseCategoryRequest {
-  book_id: number;
+  book_id: string;
   name: string;
   color: string;
   is_active?: boolean;

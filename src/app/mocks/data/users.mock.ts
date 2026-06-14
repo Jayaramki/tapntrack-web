@@ -33,7 +33,7 @@ export interface MockUser extends User {
 
 export const MOCK_USERS: MockUser[] = [
   {
-    id: 1,
+    id: '1',
     book_id: null,
     first_name: 'Super',
     last_name: 'Admin',
@@ -47,8 +47,8 @@ export const MOCK_USERS: MockUser[] = [
     permissions: ALL_PERMISSIONS,
   },
   {
-    id: 2,
-    book_id: 1,
+    id: '2',
+    book_id: '1',
     first_name: 'Rajan',
     last_name: 'Kumar',
     username: 'bookadmin',
@@ -61,8 +61,8 @@ export const MOCK_USERS: MockUser[] = [
     permissions: BOOK_ADMIN_PERMISSIONS,
   },
   {
-    id: 3,
-    book_id: 1,
+    id: '3',
+    book_id: '1',
     first_name: 'Vijay',
     last_name: 'Murugan',
     username: 'agent',
@@ -75,8 +75,8 @@ export const MOCK_USERS: MockUser[] = [
     permissions: FIELD_AGENT_PERMISSIONS,
   },
   {
-    id: 4,
-    book_id: 2,
+    id: '4',
+    book_id: '2',
     first_name: 'Senthil',
     last_name: 'Pandi',
     username: 'bookadmin2',

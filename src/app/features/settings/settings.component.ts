@@ -96,7 +96,7 @@ import { forkJoin } from 'rxjs';
                   <input class="cat-name-input"
                          [(ngModel)]="editingCatName"
                          (keydown.enter)="saveCatName(cat)"
-                         (keydown.escape)="editingCatId.set(0)"
+                         (keydown.escape)="editingCatId.set(null)"
                          (blur)="saveCatName(cat)" />
                 } @else {
                   <span class="cat-name" style="cursor:text" (click)="startEdit(cat)">{{cat.name}}</span>
@@ -134,7 +134,7 @@ export class SettingsComponent implements OnInit {
   categories   = signal<ExpenseCategoryConfig[]>([]);
   loadingCats  = signal(true);
   savingKey    = signal<string>('');
-  editingCatId = signal<number>(0);
+  editingCatId = signal<string | null>(null);
   editingCatName = '';
 
   newCatName  = '';
@@ -149,7 +149,7 @@ export class SettingsComponent implements OnInit {
   ];
 
   ngOnInit() {
-    const bookId = AuthStore.bookId() ?? 1;
+    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     forkJoin({
       settings:   this.data.settings.getAll(bookId),
       categories: this.data.expenses.getCategories(bookId),
@@ -161,7 +161,7 @@ export class SettingsComponent implements OnInit {
   }
 
   saveSetting(key: SettingKey) {
-    const bookId = AuthStore.bookId() ?? 1;
+    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     const value  = this.settingValues[key] ?? '';
     if (!value.trim()) return;
     this.savingKey.set(key);
@@ -178,7 +178,7 @@ export class SettingsComponent implements OnInit {
 
   saveCatName(cat: ExpenseCategoryConfig) {
     const name = this.editingCatName.trim();
-    this.editingCatId.set(0);
+    this.editingCatId.set(null);
     if (!name || name === cat.name) return;
     this.data.expenses.updateCategory(cat.id, { name }).subscribe(res => {
       if (res.data) {
@@ -224,7 +224,7 @@ export class SettingsComponent implements OnInit {
   addCategory() {
     const name = this.newCatName.trim();
     if (!name) return;
-    const bookId = AuthStore.bookId() ?? 1;
+    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     const req: CreateExpenseCategoryRequest = { book_id: bookId, name, color: this.newCatColor };
     this.data.expenses.createCategory(req).subscribe(res => {
       if (res.data) {

@@ -280,7 +280,7 @@ export class DashboardComponent implements OnInit {
   }
 
   private loadData(from: string, to: string) {
-    const bookId = AuthStore.bookId() ?? 1;
+    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     this.loading.set(true);
 
     forkJoin({

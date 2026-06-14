@@ -23,6 +23,7 @@ import { HttpCustomerService } from '../services/http-customer.service';
 // Loan
 import { BaseLoanService } from '../services/base-loan.service';
 import { MockLoanService } from '../../mocks/services/mock-loan.service';
+import { HttpLoanService } from '../services/http-loan.service';
 
 // Daily Entry + Ledger
 import { BaseDailyEntryService, BaseLedgerService } from '../services/base-daily-entry.service';
@@ -72,7 +73,7 @@ export class DataService {
     this.books = environment.useMocks ? inject(MockBookService) : inject(HttpBookService);
     this.users = inject(MockUserService);
     this.customers = environment.useMocks ? inject(MockCustomerService) : inject(HttpCustomerService);
-    this.loans = inject(MockLoanService);
+    this.loans = environment.useMocks ? inject(MockLoanService) : inject(HttpLoanService);
     this.dailyEntries = inject(MockDailyEntryService);
     this.ledger = inject(MockLedgerService);
     this.expenses = inject(MockExpenseService);

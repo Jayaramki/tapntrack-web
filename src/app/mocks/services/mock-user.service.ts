@@ -10,21 +10,21 @@ import { MOCK_USERS, MockUser } from '../data/users.mock';
 export class MockUserService extends BaseUserService {
   private users: MockUser[] = [...MOCK_USERS];
 
-  getAll(book_id?: number): Observable<ApiResponse<User[]>> {
+  getAll(book_id?: string): Observable<ApiResponse<User[]>> {
     const filtered = book_id !== undefined
       ? this.users.filter(u => !u.is_deleted && (u.book_id === book_id || u.role === 'super_admin'))
       : this.users.filter(u => !u.is_deleted);
     return of({ success: true, data: filtered as User[] }).pipe(delay(200));
   }
 
-  getById(id: number): Observable<ApiResponse<User>> {
+  getById(id: string): Observable<ApiResponse<User>> {
     const user = this.users.find(u => u.id === id);
     return of({ success: true, data: user as User }).pipe(delay(200));
   }
 
   create(data: CreateUserRequest): Observable<ApiResponse<User>> {
     const newUser: MockUser = {
-      id: Math.max(...this.users.map(u => u.id)) + 1,
+      id: crypto.randomUUID(),
       book_id: data.book_id,
       first_name: data.first_name,
       last_name: data.last_name,
@@ -41,19 +41,19 @@ export class MockUserService extends BaseUserService {
     return of({ success: true, data: newUser as User, message: 'User created successfully' }).pipe(delay(300));
   }
 
-  update(id: number, data: UpdateUserRequest): Observable<ApiResponse<User>> {
+  update(id: string, data: UpdateUserRequest): Observable<ApiResponse<User>> {
     const idx = this.users.findIndex(u => u.id === id);
     this.users[idx] = { ...this.users[idx], ...(data as Partial<MockUser>) };
     return of({ success: true, data: this.users[idx] as User, message: 'User updated successfully' }).pipe(delay(300));
   }
 
-  toggleActive(id: number): Observable<ApiResponse<User>> {
+  toggleActive(id: string): Observable<ApiResponse<User>> {
     const idx = this.users.findIndex(u => u.id === id);
     this.users[idx] = { ...this.users[idx], is_active: !this.users[idx].is_active };
     return of({ success: true, data: this.users[idx] as User }).pipe(delay(200));
   }
 
-  delete(id: number): Observable<ApiResponse<null>> {
+  delete(id: string): Observable<ApiResponse<null>> {
     this.users = this.users.filter(u => u.id !== id);
     return of({ success: true, data: null, message: 'User deleted successfully' }).pipe(delay(200));
   }

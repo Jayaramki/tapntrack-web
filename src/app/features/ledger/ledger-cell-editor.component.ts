@@ -95,7 +95,7 @@ export class LedgerCellEditorComponent implements ICellEditorAngularComp {
 
   getValue(): LedgerCell | null {
     const date: string = (this.params as any).date ?? this.oldCell?.date ?? '';
-    const loanId: number = this.oldCell?.loan_id ?? (this.params.data as any)?.loan_id ?? 0;
+    const loanId: string = this.oldCell?.loan_id ?? (this.params.data as any)?.loan_id ?? '';
 
     if (this._delete || this._cancelled) {
       return this.oldCell; // onCellValueChanged won't fire if isCancelAfterEnd = true

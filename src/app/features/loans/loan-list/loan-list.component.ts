@@ -213,7 +213,7 @@ export class LoanListComponent implements OnInit {
   protected readonly loading = signal(true);
   protected readonly loans = signal<Loan[]>([]);
   protected readonly books = signal<Book[]>([]);
-  protected readonly selectedBookId = signal<number>(AuthStore.bookId() ?? 1);
+  protected readonly selectedBookId = signal<string>(AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID);
   protected readonly searchText = signal('');
   protected readonly filterType = signal('');
   protected readonly filterLine = signal('');
@@ -276,14 +276,14 @@ export class LoanListComponent implements OnInit {
     }
   }
 
-  protected onBookChange(id: number): void {
+  protected onBookChange(id: string): void {
     this.selectedBookId.set(id);
     this.loadLoans();
   }
 
   private loadLoans(): void {
     this.loading.set(true);
-    const bookId = this.isSuperAdmin() ? this.selectedBookId() : (AuthStore.bookId() ?? 1);
+    const bookId = this.isSuperAdmin() ? this.selectedBookId() : (AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID);
     this.data.loans.getAll(bookId).subscribe(r => {
       this.loans.set(r.data);
       this.loading.set(false);

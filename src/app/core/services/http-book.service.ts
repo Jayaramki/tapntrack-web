@@ -18,7 +18,7 @@ export class HttpBookService extends BaseBookService {
     return this.http.get<ApiResponse<Book[]>>(this.url);
   }
 
-  getById(id: number): Observable<ApiResponse<Book>> {
+  getById(id: string): Observable<ApiResponse<Book>> {
     return this.http.get<ApiResponse<Book>>(`${this.url}/${id}`);
   }
 
@@ -26,15 +26,15 @@ export class HttpBookService extends BaseBookService {
     return this.http.post<ApiResponse<Book>>(this.url, data);
   }
 
-  update(id: number, data: UpdateBookRequest): Observable<ApiResponse<Book>> {
+  update(id: string, data: UpdateBookRequest): Observable<ApiResponse<Book>> {
     return this.http.put<ApiResponse<Book>>(`${this.url}/${id}`, data);
   }
 
-  toggleActive(id: number): Observable<ApiResponse<Book>> {
+  toggleActive(id: string): Observable<ApiResponse<Book>> {
     return this.http.patch<ApiResponse<Book>>(`${this.url}/${id}/toggle-active`, {});
   }
 
-  delete(id: number): Observable<ApiResponse<null>> {
+  delete(id: string): Observable<ApiResponse<null>> {
     return this.http.delete<ApiResponse<null>>(`${this.url}/${id}`);
   }
 }

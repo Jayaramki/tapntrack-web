@@ -14,15 +14,15 @@ export class HttpCustomerService extends BaseCustomerService {
     super();
   }
 
-  getAll(book_id: number): Observable<ApiResponse<Customer[]>> {
+  getAll(book_id: string): Observable<ApiResponse<Customer[]>> {
     return this.http.get<ApiResponse<Customer[]>>(this.url, { params: { book_id } });
   }
 
-  getById(id: number): Observable<ApiResponse<Customer>> {
+  getById(id: string): Observable<ApiResponse<Customer>> {
     return this.http.get<ApiResponse<Customer>>(`${this.url}/${id}`);
   }
 
-  search(book_id: number, query: string): Observable<ApiResponse<Customer[]>> {
+  search(book_id: string, query: string): Observable<ApiResponse<Customer[]>> {
     return this.http.get<ApiResponse<Customer[]>>(this.url, {
       params: { book_id, search: query },
     });
@@ -32,11 +32,11 @@ export class HttpCustomerService extends BaseCustomerService {
     return this.http.post<ApiResponse<Customer>>(this.url, data);
   }
 
-  update(id: number, data: UpdateCustomerRequest): Observable<ApiResponse<Customer>> {
+  update(id: string, data: UpdateCustomerRequest): Observable<ApiResponse<Customer>> {
     return this.http.put<ApiResponse<Customer>>(`${this.url}/${id}`, data);
   }
 
-  toggleActive(id: number): Observable<ApiResponse<Customer>> {
+  toggleActive(id: string): Observable<ApiResponse<Customer>> {
     return this.http.patch<ApiResponse<Customer>>(`${this.url}/${id}/toggle-status`, {});
   }
 }

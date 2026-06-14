@@ -120,7 +120,7 @@ export class CustomerListComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    const bookId = AuthStore.bookId() ?? 1;
+    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     this.data.customers.getAll(bookId).subscribe(res => {
       this.customers.set(res.data);
       this.loading.set(false);

@@ -127,7 +127,7 @@ export class CustomerFormComponent implements OnInit {
 
   protected readonly saving = signal(false);
   protected readonly loadError = signal<string | null>(null);
-  protected readonly customerId = signal<number | null>(null);
+  protected readonly customerId = signal<string | null>(null);
   protected readonly isEdit = computed(() => this.customerId() !== null);
 
   protected readonly form = this.fb.group({
@@ -142,8 +142,8 @@ export class CustomerFormComponent implements OnInit {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.customerId.set(Number(id));
-      this.data.customers.getById(Number(id)).subscribe({
+      this.customerId.set(id);
+      this.data.customers.getById(id).subscribe({
         next: (res) => this.form.patchValue(res.data),
         error: () => this.loadError.set('Customer not found.'),
       });
@@ -159,7 +159,7 @@ export class CustomerFormComponent implements OnInit {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving.set(true);
     const v = this.form.value;
-    const bookId = AuthStore.bookId() ?? 1;
+    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     const payload = {
       book_id: bookId, name: v.name!, father_name: v.father_name!,
       phone: v.phone!, address: v.address!,

@@ -1,5 +1,5 @@
 export interface DashboardStats {
-  book_id: number;
+  book_id: string;
   date_range: { from: string; to: string };
   total_cash: number;
   total_gpay: number;
@@ -16,7 +16,7 @@ export interface DashboardStats {
 }
 
 export interface ReportFilter {
-  book_id: number;
+  book_id: string;
   from_date: string;
   to_date: string;
   loan_type?: string;

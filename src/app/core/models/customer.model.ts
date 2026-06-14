@@ -1,6 +1,6 @@
 export interface Customer {
-  id: number;
-  book_id: number;
+  id: string;
+  book_id: string;
   name: string;
   father_name: string;
   phone: string;
@@ -12,7 +12,7 @@ export interface Customer {
 }
 
 export interface CreateCustomerRequest {
-  book_id: number;
+  book_id: string;
   name: string;
   father_name: string;
   phone: string;

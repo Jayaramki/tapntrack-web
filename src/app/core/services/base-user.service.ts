@@ -3,7 +3,7 @@ import { ApiResponse } from '../models/api-response.model';
 import { User } from '../models/user.model';
 
 export interface CreateUserRequest {
-  book_id: number | null;
+  book_id: string | null;
   first_name: string;
   last_name: string;
   username: string;
@@ -17,10 +17,10 @@ export interface CreateUserRequest {
 export type UpdateUserRequest = Partial<Omit<CreateUserRequest, 'password'>>;
 
 export abstract class BaseUserService {
-  abstract getAll(book_id?: number): Observable<ApiResponse<User[]>>;
-  abstract getById(id: number): Observable<ApiResponse<User>>;
+  abstract getAll(book_id?: string): Observable<ApiResponse<User[]>>;
+  abstract getById(id: string): Observable<ApiResponse<User>>;
   abstract create(data: CreateUserRequest): Observable<ApiResponse<User>>;
-  abstract update(id: number, data: UpdateUserRequest): Observable<ApiResponse<User>>;
-  abstract toggleActive(id: number): Observable<ApiResponse<User>>;
-  abstract delete(id: number): Observable<ApiResponse<null>>;
+  abstract update(id: string, data: UpdateUserRequest): Observable<ApiResponse<User>>;
+  abstract toggleActive(id: string): Observable<ApiResponse<User>>;
+  abstract delete(id: string): Observable<ApiResponse<null>>;
 }

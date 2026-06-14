@@ -2,9 +2,9 @@ export type LoanType = 'daily' | 'weekly' | 'monthly';
 export type LoanLine = 'line1' | 'line2' | 'line3' | 'line4' | 'line5' | 'line6';
 
 export interface Loan {
-  id: number;
-  book_id: number;
-  customer_id: number;
+  id: string;
+  book_id: string;
+  customer_id: string;
   loan_number: string;
   loan_amount: number;
   interest_amount: number;
@@ -27,8 +27,8 @@ export interface ArchiveLoan extends Omit<Loan, 'is_deleted'> {
 }
 
 export interface CreateLoanRequest {
-  book_id: number;
-  customer_id: number;
+  book_id: string;
+  customer_id: string;
   loan_number: string;
   loan_amount: number;
   interest_amount: number;

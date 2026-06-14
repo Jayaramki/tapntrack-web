@@ -191,7 +191,7 @@ export class ReportsComponent implements OnInit {
   }
 
   generate() {
-    const bookId = AuthStore.bookId() ?? 1;
+    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     const from   = this.filterFrom ? this.toISO(this.filterFrom) : this.toISO(new Date());
     const to     = this.filterTo   ? this.toISO(this.filterTo)   : this.toISO(new Date());
 

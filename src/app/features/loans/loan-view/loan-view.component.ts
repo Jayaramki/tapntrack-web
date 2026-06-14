@@ -174,7 +174,7 @@ export class LoanViewComponent implements OnInit {
   protected readonly canEdit = computed(() => AuthStore.hasPermission('edit-loans'));
 
   ngOnInit(): void {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
+    const id = this.route.snapshot.paramMap.get('id') ?? '';
     this.data.loans.getById(id).subscribe({
       next: (res) => this.loan.set(res.data),
       error: () => this.loadError.set('Loan not found.'),

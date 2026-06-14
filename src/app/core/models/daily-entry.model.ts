@@ -2,9 +2,9 @@ import { LoanLine } from './loan.model';
 
 export type PaymentMode = 'cash' | 'gpay';
 export interface DailyEntry {
-  id: number;
-  book_id: number;
-  loan_id: number;
+  id: string;
+  book_id: string;
+  loan_id: string;
   entry_date: string;
   amount: number;
   mode: PaymentMode;
@@ -17,28 +17,28 @@ export interface DailyEntry {
 }
 
 export interface CreateDailyEntryRequest {
-  book_id: number;
-  loan_id: number;
+  book_id: string;
+  loan_id: string;
   entry_date: string;
   amount: number;
   mode: PaymentMode;
 }
 
 export interface BulkEntryItem {
-  loan_id: number;
+  loan_id: string;
   amount: number;
   mode: PaymentMode;
 }
 
 export interface BulkDailyEntryRequest {
-  book_id: number;
+  book_id: string;
   entry_date: string;
   entries: BulkEntryItem[];
 }
 
 export interface DaySummary {
   date: string;
-  book_id: number;
+  book_id: string;
   total_cash: number;
   total_gpay: number;
   total_collection: number;
@@ -48,15 +48,15 @@ export interface DaySummary {
 }
 
 export interface LedgerCell {
-  id?: number;          // entry id — present for existing entries, undefined for empty cells
-  loan_id: number;
+  id?: string;          // entry id — present for existing entries, undefined for empty cells
+  loan_id: string;
   date: string;
   amount: number | null;
   mode: PaymentMode | null;
 }
 
 export interface LedgerRow {
-  loan_id: number;
+  loan_id: string;
   loan_number: string;
   customer_name: string;
   loan_amount: number;
@@ -67,7 +67,7 @@ export interface LedgerRow {
 }
 
 export interface LedgerData {
-  book_id: number;
+  book_id: string;
   year: number;
   month: number;
   days: number[]; // [1..31] for the month

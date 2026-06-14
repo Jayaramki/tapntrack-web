@@ -214,7 +214,7 @@ export class LoanFormComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   protected readonly saving = signal(false);
   protected readonly loadError = signal<string | null>(null);
-  protected readonly loanId = signal<number | null>(null);
+  protected readonly loanId = signal<string | null>(null);
   protected readonly books = signal<Book[]>([]);
   protected readonly allCustomers = signal<Customer[]>([]);
   protected readonly customerSuggestions = signal<Customer[]>([]);
@@ -244,8 +244,8 @@ export class LoanFormComponent implements OnInit {
     .map(l => ({ label: l.replace('line', 'Line '), value: l }));
 
   protected readonly form = this.fb.group({
-    book_id:         [AuthStore.bookId() ?? 1, Validators.required],
-    customer_id:     [null as number | null, Validators.required],
+    book_id:         [AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID, Validators.required],
+    customer_id:     [null as string | null, Validators.required],
     loan_number:     ['', Validators.required],
     loan_amount:     [null as number | null, [Validators.required, Validators.min(1)]],
     interest_amount: [null as number | null, [Validators.required, Validators.min(0)]],
@@ -261,7 +261,7 @@ export class LoanFormComponent implements OnInit {
     this.form.get('interest_amount')!.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {});
 
-    const bookId = AuthStore.bookId() ?? 1;
+    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
 
     if (this.isSuperAdmin()) {
       this.data.books.getAll().subscribe(r => {
@@ -274,8 +274,8 @@ export class LoanFormComponent implements OnInit {
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.loanId.set(Number(id));
-      this.data.loans.getById(Number(id)).subscribe({
+      this.loanId.set(id);
+      this.data.loans.getById(id).subscribe({
         next: (res) => {
           const l = res.data;
           this.form.patchValue({
@@ -300,11 +300,11 @@ export class LoanFormComponent implements OnInit {
     }
   }
 
-  private loadCustomers(bookId: number): void {
+  private loadCustomers(bookId: string): void {
     this.data.customers.getAll(bookId).subscribe(r => this.allCustomers.set(r.data));
   }
 
-  protected onBookChange(bookId: number): void {
+  protected onBookChange(bookId: string): void {
     this.form.patchValue({ book_id: bookId, customer_id: null });
     this.autocompleteCustomer.set(null);
     this.loadCustomers(bookId);

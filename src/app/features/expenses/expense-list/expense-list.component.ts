@@ -210,7 +210,7 @@ export class ExpenseListComponent implements OnInit {
 
   private load(): void {
     this.loading.set(true);
-    const bookId = AuthStore.bookId() ?? 1;
+    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     forkJoin([
       this.data.expenses.getAll(bookId),
       this.data.expenses.getCategories(bookId),

@@ -17,19 +17,19 @@ import { AuthStore } from '../../core/stores/auth.store';
 export class MockSettingsService extends BaseSettingsService {
   private settings: AppSetting[] = [...MOCK_APP_SETTINGS];
 
-  getAll(book_id: number): Observable<ApiResponse<AppSetting[]>> {
+  getAll(book_id: string): Observable<ApiResponse<AppSetting[]>> {
     return of({ success: true, data: this.settings.filter(s => s.book_id === book_id) }).pipe(delay(200));
   }
 
-  update(book_id: number, data: UpdateSettingRequest): Observable<ApiResponse<AppSetting>> {
+  update(book_id: string, data: UpdateSettingRequest): Observable<ApiResponse<AppSetting>> {
     const idx = this.settings.findIndex(s => s.book_id === book_id && s.key === data.key);
     if (idx === -1) {
       const newSetting: AppSetting = {
-        id: Math.max(...this.settings.map(s => s.id)) + 1,
+        id: crypto.randomUUID(),
         book_id,
         key: data.key,
         value: data.value,
-        updated_by: AuthStore.user()?.id ?? 0,
+        updated_by: AuthStore.user()?.id ?? '',
         updated_at: new Date().toISOString(),
       };
       this.settings.push(newSetting);
@@ -42,7 +42,7 @@ export class MockSettingsService extends BaseSettingsService {
 
 @Injectable({ providedIn: 'root' })
 export class MockDashboardService extends BaseDashboardService {
-  getStats(book_id: number, from: string, to: string): Observable<ApiResponse<DashboardStats>> {
+  getStats(book_id: string, from: string, to: string): Observable<ApiResponse<DashboardStats>> {
     const entries = MOCK_DAILY_ENTRIES.filter(
       e => e.book_id === book_id && e.entry_date >= from && e.entry_date <= to
     );

@@ -4,9 +4,9 @@ import { Book, CreateBookRequest, UpdateBookRequest } from '../models/book.model
 
 export abstract class BaseBookService {
   abstract getAll(): Observable<ApiResponse<Book[]>>;
-  abstract getById(id: number): Observable<ApiResponse<Book>>;
+  abstract getById(id: string): Observable<ApiResponse<Book>>;
   abstract create(data: CreateBookRequest): Observable<ApiResponse<Book>>;
-  abstract update(id: number, data: UpdateBookRequest): Observable<ApiResponse<Book>>;
-  abstract toggleActive(id: number): Observable<ApiResponse<Book>>;
-  abstract delete(id: number): Observable<ApiResponse<null>>;
+  abstract update(id: string, data: UpdateBookRequest): Observable<ApiResponse<Book>>;
+  abstract toggleActive(id: string): Observable<ApiResponse<Book>>;
+  abstract delete(id: string): Observable<ApiResponse<null>>;
 }

@@ -233,7 +233,7 @@ export class DaySummaryComponent implements OnInit {
 
   protected loadSummary(): void {
     this.loading.set(true);
-    const bookId = AuthStore.bookId() ?? 1;
+    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     const d = this.selectedDate;
     const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     this.data.dailyEntries.getDaySummary(bookId, dateStr).subscribe(res => {

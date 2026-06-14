@@ -4,12 +4,12 @@ import { AppSetting, UpdateSettingRequest } from '../models/app-setting.model';
 import { DashboardStats, ReportFilter, CollectionReport, LoanReport } from '../models/dashboard.model';
 
 export abstract class BaseSettingsService {
-  abstract getAll(book_id: number): Observable<ApiResponse<AppSetting[]>>;
-  abstract update(book_id: number, data: UpdateSettingRequest): Observable<ApiResponse<AppSetting>>;
+  abstract getAll(book_id: string): Observable<ApiResponse<AppSetting[]>>;
+  abstract update(book_id: string, data: UpdateSettingRequest): Observable<ApiResponse<AppSetting>>;
 }
 
 export abstract class BaseDashboardService {
-  abstract getStats(book_id: number, from: string, to: string): Observable<ApiResponse<DashboardStats>>;
+  abstract getStats(book_id: string, from: string, to: string): Observable<ApiResponse<DashboardStats>>;
 }
 
 export abstract class BaseReportsService {

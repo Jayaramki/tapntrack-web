@@ -2,7 +2,7 @@ import { Book } from '../../core/models/book.model';
 
 export const MOCK_BOOKS: Book[] = [
   {
-    id: 1,
+    id: '1',
     name: 'Chennai Branch',
     is_active: true,
     is_deleted: false,
@@ -10,7 +10,7 @@ export const MOCK_BOOKS: Book[] = [
     updated_at: '2025-01-01T00:00:00Z',
   },
   {
-    id: 2,
+    id: '2',
     name: 'Madurai Branch',
     is_active: true,
     is_deleted: false,
@@ -18,7 +18,7 @@ export const MOCK_BOOKS: Book[] = [
     updated_at: '2025-01-15T00:00:00Z',
   },
   {
-    id: 3,
+    id: '3',
     name: 'Coimbatore Branch (Inactive)',
     is_active: false,
     is_deleted: false,

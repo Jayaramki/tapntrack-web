@@ -200,7 +200,7 @@ export class UserFormComponent implements OnInit {
 
   protected readonly saving = signal(false);
   protected readonly loadError = signal<string | null>(null);
-  protected readonly userId = signal<number | null>(null);
+  protected readonly userId = signal<string | null>(null);
   protected readonly books = signal<Book[]>([]);
   protected readonly selectedRole = signal<string>('');
   private readonly destroyRef = inject(DestroyRef);
@@ -229,7 +229,7 @@ export class UserFormComponent implements OnInit {
     last_name:  ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
     username:   ['', [Validators.required, Validators.minLength(4), Validators.maxLength(50)]],
     role:       ['', Validators.required],
-    book_id:    [null as number | null],
+    book_id:    [null as string | null],
     phone:      [''],
     password:   [''],
     confirmPassword: [''],
@@ -247,11 +247,11 @@ export class UserFormComponent implements OnInit {
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.userId.set(Number(id));
+      this.userId.set(id);
       // Password not required on edit
       this.form.get('password')?.clearValidators();
       this.form.get('confirmPassword')?.clearValidators();
-      this.data.users.getById(Number(id)).subscribe({
+      this.data.users.getById(id).subscribe({
         next: (res) => {
           const u = res.data;
           this.form.patchValue({

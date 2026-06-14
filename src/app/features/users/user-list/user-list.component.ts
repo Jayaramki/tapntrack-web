@@ -174,7 +174,7 @@ export class UserListComponent implements OnInit {
   protected roleSeverity(role: UserRole): 'success'|'info'|'warn'|'danger'|'secondary' {
     return (ROLE_SEVERITY[role] as any) ?? 'secondary';
   }
-  protected bookName(bookId: number | null): string {
+  protected bookName(bookId: string | null): string {
     if (!bookId) return '— (Global)';
     return this.books().find(b => b.id === bookId)?.name ?? `Book #${bookId}`;
   }
