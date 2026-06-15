@@ -101,16 +101,16 @@ import { Loan } from '../../../core/models/loan.model';
           <div class="section-title">Financial</div>
 
           <div class="detail-item">
-            <div class="detail-label">Loan Amount</div>
+            <div class="detail-label">Loan Amount (to collect)</div>
             <div class="detail-value">₹{{ l.loan_amount | number }}</div>
           </div>
           <div class="detail-item">
-            <div class="detail-label">Interest Amount</div>
+            <div class="detail-label">Interest (withheld upfront)</div>
             <div class="detail-value">₹{{ l.interest_amount | number }}</div>
           </div>
           <div class="detail-item">
-            <div class="detail-label">Total to Collect</div>
-            <div class="detail-value">₹{{ (l.loan_amount + l.interest_amount) | number }}</div>
+            <div class="detail-label">Disbursed to Customer</div>
+            <div class="detail-value">₹{{ (l.loan_amount - l.interest_amount) | number }}</div>
           </div>
           <div class="detail-item">
             <div class="detail-label">Total Collected</div>
@@ -153,8 +153,8 @@ import { Loan } from '../../../core/models/loan.model';
             <span class="stat-value" style="color:var(--p-red-600)">₹{{ (l.remaining_balance ?? 0) | number }}</span>
           </div>
           <div class="stat">
-            <span class="stat-label">Total</span>
-            <span class="stat-value">₹{{ (l.loan_amount + l.interest_amount) | number }}</span>
+            <span class="stat-label">To Collect</span>
+            <span class="stat-value">₹{{ l.loan_amount | number }}</span>
           </div>
         </div>
       </p-card>
@@ -186,7 +186,7 @@ export class LoanViewComponent implements OnInit {
   }
 
   protected progressPct(loan: Loan): number {
-    const total = loan.loan_amount + loan.interest_amount;
+    const total = loan.loan_amount; // interest is withheld upfront; collect loan_amount
     if (!total) return 0;
     return Math.min(100, Math.round(((loan.total_collected ?? 0) / total) * 100));
   }

@@ -166,6 +166,10 @@ import { Customer } from '../../../core/models/customer.model';
                   <span class="info-value">₹{{ loanSummary().total | number }}</span>
                 </div>
                 <div class="info-item">
+                  <span class="info-label">Disbursed to Customer</span>
+                  <span class="info-value">₹{{ loanSummary().disbursed | number }}</span>
+                </div>
+                <div class="info-item">
                   <span class="info-label">Interest %</span>
                   <span class="info-value">{{ loanSummary().interestPct }}%</span>
                 </div>
@@ -216,12 +220,14 @@ export class LoanFormComponent implements OnInit {
   protected readonly daysToPay = 100; // Loaded from settings in real app
 
   protected readonly loanSummary = computed(() => {
-    const amt = this.form.get('loan_amount')?.value ?? 0;
-    const interest = this.form.get('interest_amount')?.value ?? 0;
-    const total = (amt as number) + (interest as number);
-    const interestPct = amt > 0 ? +((interest as number / (amt as number)) * 100).toFixed(1) : 0;
+    const amt = (this.form.get('loan_amount')?.value ?? 0) as number;
+    const interest = (this.form.get('interest_amount')?.value ?? 0) as number;
+    // Interest is withheld upfront: customer gets (amt - interest), repays amt.
+    const total = amt;
+    const disbursed = amt - interest;
+    const interestPct = amt > 0 ? +((interest / amt) * 100).toFixed(1) : 0;
     const dailyAmt = this.daysToPay > 0 ? total / this.daysToPay : 0;
-    return { total, interestPct, dailyAmt };
+    return { total, disbursed, interestPct, dailyAmt };
   });
 
   protected readonly loanTypeOptions = [
