@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { Component, signal, inject, computed, effect } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -13,7 +13,7 @@ import { MessageService } from 'primeng/api';
 import { Customer } from '../../../core/models/customer.model';
 import { DataService } from '../../../core/services/data.service';
 import { ResponsiveService } from '../../../core/services/responsive.service';
-import { AuthStore } from '../../../core/stores/auth.store';
+import { BookContextStore } from '../../../core/stores/book-context.store';
 
 @Component({
   selector: 'app-customer-list',
@@ -102,11 +102,12 @@ import { AuthStore } from '../../../core/stores/auth.store';
     </p-table>
   `,
 })
-export class CustomerListComponent implements OnInit {
+export class CustomerListComponent {
   protected readonly router = inject(Router);
   private readonly data = inject(DataService);
   private readonly toastSvc = inject(MessageService);
   protected readonly responsive = inject(ResponsiveService);
+  private readonly bookCtx = inject(BookContextStore);
 
   protected readonly loading = signal(true);
   protected readonly customers = signal<Customer[]>([]);
@@ -119,11 +120,16 @@ export class CustomerListComponent implements OnInit {
       : this.customers();
   });
 
-  ngOnInit(): void {
-    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
-    this.data.customers.getAll(bookId).subscribe(res => {
-      this.customers.set(res.data);
-      this.loading.set(false);
+  constructor() {
+    // Reload whenever the active book changes (super_admin top-bar picker).
+    effect(() => {
+      const bookId = this.bookCtx.bookId();
+      if (!bookId) return;
+      this.loading.set(true);
+      this.data.customers.getAll(bookId).subscribe(res => {
+        this.customers.set(res.data);
+        this.loading.set(false);
+      });
     });
   }
 

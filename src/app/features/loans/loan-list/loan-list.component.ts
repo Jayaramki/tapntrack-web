@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { Component, signal, inject, computed, effect } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatePipe, DecimalPipe, TitleCasePipe } from '@angular/common';
@@ -12,9 +12,8 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { DataService } from '../../../core/services/data.service';
-import { AuthStore } from '../../../core/stores/auth.store';
+import { BookContextStore } from '../../../core/stores/book-context.store';
 import { Loan } from '../../../core/models/loan.model';
-import { Book } from '../../../core/models/book.model';
 import { ResponsiveService } from '../../../core/services/responsive.service';
 import { CardPaginatorComponent } from '../../../shared/components/card-paginator/card-paginator.component';
 
@@ -64,14 +63,6 @@ import { CardPaginatorComponent } from '../../../shared/components/card-paginato
       <p-button label="Deleted" icon="pi pi-trash" severity="secondary" [outlined]="true"
                 size="small" routerLink="/loans/deleted" />
     </div>
-
-    @if (isSuperAdmin()) {
-      <div style="margin-bottom: 16px; max-width: 280px;">
-        <p-select [options]="books()" optionLabel="name" optionValue="id"
-                  [ngModel]="selectedBookId()" (ngModelChange)="onBookChange($event)"
-                  placeholder="Select Book" styleClass="w-full" />
-      </div>
-    }
 
     <div class="filters">
       <input pInputText [ngModel]="searchText()" (ngModelChange)="searchText.set($event)"
@@ -204,24 +195,21 @@ import { CardPaginatorComponent } from '../../../shared/components/card-paginato
     }
   `,
 })
-export class LoanListComponent implements OnInit {
+export class LoanListComponent {
   private readonly data = inject(DataService);
   private readonly toastSvc = inject(MessageService);
   private readonly confirmSvc = inject(ConfirmationService);
   protected readonly responsive = inject(ResponsiveService);
+  private readonly bookCtx = inject(BookContextStore);
 
   protected readonly loading = signal(true);
   protected readonly loans = signal<Loan[]>([]);
-  protected readonly books = signal<Book[]>([]);
-  protected readonly selectedBookId = signal<string>(AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID);
   protected readonly searchText = signal('');
   protected readonly filterType = signal('');
   protected readonly filterLine = signal('');
   protected readonly filterStatus = signal('');
   protected readonly mobilePage = signal(0);
   private readonly mobilePageSize = 10;
-
-  protected readonly isSuperAdmin = computed(() => AuthStore.role() === 'super_admin');
 
   protected readonly typeOptions = [
     { label: 'Daily', value: 'daily' },
@@ -264,26 +252,15 @@ export class LoanListComponent implements OnInit {
     return this.filtered().slice(start, start + this.mobilePageSize);
   });
 
-  ngOnInit(): void {
-    if (this.isSuperAdmin()) {
-      this.data.books.getAll().subscribe(r => {
-        this.books.set(r.data);
-        if (r.data.length) this.selectedBookId.set(r.data[0].id);
-        this.loadLoans();
-      });
-    } else {
-      this.loadLoans();
-    }
+  constructor() {
+    effect(() => {
+      const bookId = this.bookCtx.bookId();
+      if (bookId) this.loadLoans(bookId);
+    });
   }
 
-  protected onBookChange(id: string): void {
-    this.selectedBookId.set(id);
-    this.loadLoans();
-  }
-
-  private loadLoans(): void {
+  private loadLoans(bookId: string): void {
     this.loading.set(true);
-    const bookId = this.isSuperAdmin() ? this.selectedBookId() : (AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID);
     this.data.loans.getAll(bookId).subscribe(r => {
       this.loans.set(r.data);
       this.loading.set(false);

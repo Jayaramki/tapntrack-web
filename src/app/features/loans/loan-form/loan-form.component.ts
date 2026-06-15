@@ -15,9 +15,8 @@ import { ToastModule } from 'primeng/toast';
 import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
 import { DataService } from '../../../core/services/data.service';
-import { AuthStore } from '../../../core/stores/auth.store';
+import { BookContextStore } from '../../../core/stores/book-context.store';
 import { Customer } from '../../../core/models/customer.model';
-import { Book } from '../../../core/models/book.model';
 
 @Component({
   selector: 'app-loan-form',
@@ -75,15 +74,6 @@ import { Book } from '../../../core/models/book.model';
 
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
           <div class="form-grid">
-
-            @if (isSuperAdmin()) {
-              <div class="field full-width" style="max-width:280px">
-                <label>Book <span style="color:var(--p-red-500)">*</span></label>
-                <p-select formControlName="book_id" [options]="books()" optionLabel="name"
-                          optionValue="id" placeholder="Select book"
-                          styleClass="w-full" (onChange)="onBookChange($event.value)" />
-              </div>
-            }
 
             <div class="section-title">Loan Details</div>
 
@@ -212,17 +202,16 @@ export class LoanFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly bookCtx = inject(BookContextStore);
   protected readonly saving = signal(false);
   protected readonly loadError = signal<string | null>(null);
   protected readonly loanId = signal<string | null>(null);
-  protected readonly books = signal<Book[]>([]);
   protected readonly allCustomers = signal<Customer[]>([]);
   protected readonly customerSuggestions = signal<Customer[]>([]);
   protected readonly autocompleteCustomer = signal<Customer | null>(null);
   protected readonly today = new Date();
 
   protected readonly isEdit = computed(() => this.loanId() !== null);
-  protected readonly isSuperAdmin = computed(() => AuthStore.role() === 'super_admin');
 
   protected readonly daysToPay = 100; // Loaded from settings in real app
 
@@ -244,7 +233,7 @@ export class LoanFormComponent implements OnInit {
     .map(l => ({ label: l.replace('line', 'Line '), value: l }));
 
   protected readonly form = this.fb.group({
-    book_id:         [AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID, Validators.required],
+    book_id:         [this.bookCtx.bookId() ?? '', Validators.required],
     customer_id:     [null as string | null, Validators.required],
     loan_number:     ['', Validators.required],
     loan_amount:     [null as number | null, [Validators.required, Validators.min(1)]],
@@ -261,16 +250,9 @@ export class LoanFormComponent implements OnInit {
     this.form.get('interest_amount')!.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {});
 
-    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
-
-    if (this.isSuperAdmin()) {
-      this.data.books.getAll().subscribe(r => {
-        this.books.set(r.data);
-        this.loadCustomers(bookId);
-      });
-    } else {
-      this.loadCustomers(bookId);
-    }
+    const bookId = this.bookCtx.bookId();
+    this.form.patchValue({ book_id: bookId ?? '' });
+    if (bookId) this.loadCustomers(bookId);
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -288,6 +270,8 @@ export class LoanFormComponent implements OnInit {
             line: l.line,
             issued_date: new Date(l.issued_date),
           });
+          // Load this loan's book customers for the autocomplete suggestions
+          this.loadCustomers(l.book_id);
           // Resolve customer name for display
           this.data.customers.getById(l.customer_id).subscribe(cr => {
             this.autocompleteCustomer.set(cr.data);
@@ -302,12 +286,6 @@ export class LoanFormComponent implements OnInit {
 
   private loadCustomers(bookId: string): void {
     this.data.customers.getAll(bookId).subscribe(r => this.allCustomers.set(r.data));
-  }
-
-  protected onBookChange(bookId: string): void {
-    this.form.patchValue({ book_id: bookId, customer_id: null });
-    this.autocompleteCustomer.set(null);
-    this.loadCustomers(bookId);
   }
 
   protected searchCustomers(event: { query: string }): void {

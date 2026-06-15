@@ -9,6 +9,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { DataService } from '../../core/services/data.service';
 import { AuthStore } from '../../core/stores/auth.store';
+import { BookContextStore } from '../../core/stores/book-context.store';
 import { AppSetting, SettingKey } from '../../core/models/app-setting.model';
 import { ExpenseCategoryConfig, CreateExpenseCategoryRequest } from '../../core/models/expense.model';
 import { forkJoin } from 'rxjs';
@@ -130,6 +131,7 @@ export class SettingsComponent implements OnInit {
   private data    = inject(DataService);
   private msg     = inject(MessageService);
   private confirm = inject(ConfirmationService);
+  private bookCtx = inject(BookContextStore);
 
   categories   = signal<ExpenseCategoryConfig[]>([]);
   loadingCats  = signal(true);
@@ -149,7 +151,7 @@ export class SettingsComponent implements OnInit {
   ];
 
   ngOnInit() {
-    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
+    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     forkJoin({
       settings:   this.data.settings.getAll(bookId),
       categories: this.data.expenses.getCategories(bookId),
@@ -161,7 +163,7 @@ export class SettingsComponent implements OnInit {
   }
 
   saveSetting(key: SettingKey) {
-    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
+    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     const value  = this.settingValues[key] ?? '';
     if (!value.trim()) return;
     this.savingKey.set(key);
@@ -224,7 +226,7 @@ export class SettingsComponent implements OnInit {
   addCategory() {
     const name = this.newCatName.trim();
     if (!name) return;
-    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
+    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     const req: CreateExpenseCategoryRequest = { book_id: bookId, name, color: this.newCatColor };
     this.data.expenses.createCategory(req).subscribe(res => {
       if (res.data) {

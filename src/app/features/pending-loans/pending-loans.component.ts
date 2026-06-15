@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { Component, signal, inject, computed, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe, NgTemplateOutlet, TitleCasePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -9,9 +9,8 @@ import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { DataService } from '../../core/services/data.service';
-import { AuthStore } from '../../core/stores/auth.store';
+import { BookContextStore } from '../../core/stores/book-context.store';
 import { PendingLoan } from '../../core/models/loan.model';
-import { Book } from '../../core/models/book.model';
 import { ResponsiveService } from '../../core/services/responsive.service';
 import { CardPaginatorComponent } from '../../shared/components/card-paginator/card-paginator.component';
 
@@ -57,13 +56,6 @@ import { CardPaginatorComponent } from '../../shared/components/card-paginator/c
       <h1 class="page-title">Pending Loans</h1>
     </div>
 
-    @if (isSuperAdmin()) {
-      <div style="margin-bottom: 16px; max-width: 280px;">
-        <p-select [options]="books()" optionLabel="name" optionValue="id"
-                  [ngModel]="selectedBookId()" (ngModelChange)="onBookChange($event)"
-                  placeholder="Select Book" styleClass="w-full" />
-      </div>
-    }
 
     <div class="filters">
       <p-select [options]="lineOptions" optionLabel="label" optionValue="value"
@@ -210,18 +202,17 @@ import { CardPaginatorComponent } from '../../shared/components/card-paginator/c
     </ng-template>
   `,
 })
-export class PendingLoansComponent implements OnInit {
+export class PendingLoansComponent {
   private readonly data = inject(DataService);
   protected readonly responsive = inject(ResponsiveService);
 
+  private readonly bookCtx = inject(BookContextStore);
+
   protected readonly loading = signal(true);
   protected readonly allPending = signal<PendingLoan[]>([]);
-  protected readonly books = signal<Book[]>([]);
-  protected readonly selectedBookId = signal<string>(AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID);
   protected readonly activeTab = signal<string>('daily');
   protected readonly filterLine = signal('');
 
-  protected readonly isSuperAdmin = computed(() => AuthStore.role() === 'super_admin');
   protected readonly mobilePage = signal(0);
   private readonly mobilePageSize = 10;
 
@@ -259,26 +250,15 @@ export class PendingLoansComponent implements OnInit {
     return '';
   }
 
-  ngOnInit(): void {
-    if (this.isSuperAdmin()) {
-      this.data.books.getAll().subscribe(r => {
-        this.books.set(r.data);
-        if (r.data.length) this.selectedBookId.set(r.data[0].id);
-        this.loadPending();
-      });
-    } else {
-      this.loadPending();
-    }
+  constructor() {
+    effect(() => {
+      const bookId = this.bookCtx.bookId();
+      if (bookId) this.loadPending(bookId);
+    });
   }
 
-  protected onBookChange(id: string): void {
-    this.selectedBookId.set(id);
-    this.loadPending();
-  }
-
-  private loadPending(): void {
+  private loadPending(bookId: string): void {
     this.loading.set(true);
-    const bookId = this.isSuperAdmin() ? this.selectedBookId() : (AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID);
     this.data.loans.getPending(bookId).subscribe(r => {
       this.allPending.set(r.data);
       this.loading.set(false);

@@ -10,7 +10,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
 import { DataService } from '../../../core/services/data.service';
-import { AuthStore } from '../../../core/stores/auth.store';
+import { BookContextStore } from '../../../core/stores/book-context.store';
 
 @Component({
   selector: 'app-customer-form',
@@ -124,6 +124,7 @@ export class CustomerFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly data = inject(DataService);
   private readonly toastSvc = inject(MessageService);
+  private readonly bookCtx = inject(BookContextStore);
 
   protected readonly saving = signal(false);
   protected readonly loadError = signal<string | null>(null);
@@ -159,7 +160,7 @@ export class CustomerFormComponent implements OnInit {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving.set(true);
     const v = this.form.value;
-    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
+    const bookId = this.bookCtx.bookId()!;
     const payload = {
       book_id: bookId, name: v.name!, father_name: v.father_name!,
       phone: v.phone!, address: v.address!,

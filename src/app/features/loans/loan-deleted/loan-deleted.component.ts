@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { Component, signal, inject, computed, effect } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatePipe, DecimalPipe, TitleCasePipe } from '@angular/common';
@@ -12,9 +12,8 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { DataService } from '../../../core/services/data.service';
-import { AuthStore } from '../../../core/stores/auth.store';
+import { BookContextStore } from '../../../core/stores/book-context.store';
 import { Loan } from '../../../core/models/loan.model';
-import { Book } from '../../../core/models/book.model';
 
 @Component({
   selector: 'app-loan-deleted',
@@ -42,13 +41,6 @@ import { Book } from '../../../core/models/book.model';
       <h1 class="page-title">Deleted Loans</h1>
     </div>
 
-    @if (isSuperAdmin()) {
-      <div style="margin-bottom: 16px; max-width: 280px;">
-        <p-select [options]="books()" optionLabel="name" optionValue="id"
-                  [ngModel]="selectedBookId()" (ngModelChange)="onBookChange($event)"
-                  placeholder="Select Book" styleClass="w-full" />
-      </div>
-    }
 
     <div class="filters">
       <input pInputText [ngModel]="searchText()" (ngModelChange)="searchText.set($event)"
@@ -103,17 +95,16 @@ import { Book } from '../../../core/models/book.model';
     </div>
   `,
 })
-export class LoanDeletedComponent implements OnInit {
+export class LoanDeletedComponent {
   private readonly data = inject(DataService);
   private readonly toastSvc = inject(MessageService);
   private readonly confirmSvc = inject(ConfirmationService);
 
+  private readonly bookCtx = inject(BookContextStore);
+
   protected readonly loading = signal(true);
   protected readonly loans = signal<Loan[]>([]);
-  protected readonly books = signal<Book[]>([]);
-  protected readonly selectedBookId = signal<string>(AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID);
   protected readonly searchText = signal('');
-  protected readonly isSuperAdmin = computed(() => AuthStore.role() === 'super_admin');
 
   protected readonly filtered = computed(() => {
     const s = this.searchText().toLowerCase();
@@ -123,26 +114,15 @@ export class LoanDeletedComponent implements OnInit {
     );
   });
 
-  ngOnInit(): void {
-    if (this.isSuperAdmin()) {
-      this.data.books.getAll().subscribe(r => {
-        this.books.set(r.data);
-        if (r.data.length) this.selectedBookId.set(r.data[0].id);
-        this.loadLoans();
-      });
-    } else {
-      this.loadLoans();
-    }
+  constructor() {
+    effect(() => {
+      const bookId = this.bookCtx.bookId();
+      if (bookId) this.loadLoans(bookId);
+    });
   }
 
-  protected onBookChange(id: string): void {
-    this.selectedBookId.set(id);
-    this.loadLoans();
-  }
-
-  private loadLoans(): void {
+  private loadLoans(bookId: string): void {
     this.loading.set(true);
-    const bookId = this.isSuperAdmin() ? this.selectedBookId() : (AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID);
     this.data.loans.getDeleted(bookId).subscribe(r => {
       this.loans.set(r.data);
       this.loading.set(false);
