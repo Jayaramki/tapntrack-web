@@ -13,6 +13,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { DataService } from '../../core/services/data.service';
 import { AuthStore } from '../../core/stores/auth.store';
+import { BookContextStore } from '../../core/stores/book-context.store';
 import { Loan, LoanLine } from '../../core/models/loan.model';
 import { DailyEntry } from '../../core/models/daily-entry.model';
 
@@ -377,6 +378,7 @@ interface EntryRow {
 })
 export class DailyEntryComponent implements OnInit, OnDestroy {
   private readonly data = inject(DataService);
+  private readonly bookCtx = inject(BookContextStore);
   private readonly toastSvc = inject(MessageService);
   private readonly resizeListener = () => this.isMobile.set(window.innerWidth < 768);
 
@@ -456,7 +458,7 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
     if (!this.selectedLine) return;
     if (this.multiDateMode() && !this.selectedDatesArr.length) return;
     this.loading.set(true);
-    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
+    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
 
     this.data.loans.getAll(bookId).subscribe(loansRes => {
       const loans = loansRes.data.filter(l => l.line === this.selectedLine && !l.completed_date);
@@ -499,7 +501,7 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
   protected onSaveRow(row: EntryRow): void {
     if (!row.amount || row.amount <= 0) return;
     row.saving = true;
-    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
+    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     this.data.dailyEntries.create({
       book_id: bookId, loan_id: row.loan.id,
       entry_date: this.toDateStr(this.selectedDate), amount: row.amount, mode: row.mode,
@@ -513,7 +515,7 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
   }
 
   protected onSubmitAll(): void {
-    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
+    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
 
     if (!this.multiDateMode()) {
       const pending = this.rows().filter(r => !r.existingEntry && r.amount && r.amount > 0);

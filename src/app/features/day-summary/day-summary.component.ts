@@ -8,6 +8,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { DataService } from '../../core/services/data.service';
 import { AuthStore } from '../../core/stores/auth.store';
+import { BookContextStore } from '../../core/stores/book-context.store';
 import { DaySummary } from '../../core/models/daily-entry.model';
 import { LoanLine } from '../../core/models/loan.model';
 
@@ -192,6 +193,7 @@ import { LoanLine } from '../../core/models/loan.model';
 })
 export class DaySummaryComponent implements OnInit {
   private readonly data = inject(DataService);
+  private readonly bookCtx = inject(BookContextStore);
 
   protected readonly loading = signal(false);
   protected readonly summary = signal<DaySummary | null>(null);
@@ -233,7 +235,7 @@ export class DaySummaryComponent implements OnInit {
 
   protected loadSummary(): void {
     this.loading.set(true);
-    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
+    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     const d = this.selectedDate;
     const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     this.data.dailyEntries.getDaySummary(bookId, dateStr).subscribe(res => {
