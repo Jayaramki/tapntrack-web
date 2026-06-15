@@ -33,6 +33,7 @@ import { HttpDailyEntryService, HttpLedgerService } from '../services/http-daily
 // Expense
 import { BaseExpenseService } from '../services/base-expense.service';
 import { MockExpenseService } from '../../mocks/services/mock-expense.service';
+import { HttpExpenseService } from '../services/http-expense.service';
 
 // Settings, Dashboard, Reports
 import { BaseSettingsService, BaseDashboardService, BaseReportsService } from '../services/base-settings.service';
@@ -77,7 +78,7 @@ export class DataService {
     this.loans = environment.useMocks ? inject(MockLoanService) : inject(HttpLoanService);
     this.dailyEntries = environment.useMocks ? inject(MockDailyEntryService) : inject(HttpDailyEntryService);
     this.ledger = environment.useMocks ? inject(MockLedgerService) : inject(HttpLedgerService);
-    this.expenses = inject(MockExpenseService);
+    this.expenses = environment.useMocks ? inject(MockExpenseService) : inject(HttpExpenseService);
     this.settings = environment.useMocks ? inject(MockSettingsService) : inject(HttpSettingsService);
     this.dashboard = inject(MockDashboardService);
     this.reports = inject(MockReportsService);

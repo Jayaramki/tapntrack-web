@@ -12,6 +12,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { DataService } from '../../../core/services/data.service';
 import { AuthStore } from '../../../core/stores/auth.store';
+import { BookContextStore } from '../../../core/stores/book-context.store';
 import { Expense, ExpenseCategoryConfig } from '../../../core/models/expense.model';
 import { forkJoin } from 'rxjs';
 
@@ -167,6 +168,7 @@ import { forkJoin } from 'rxjs';
 export class ExpenseListComponent implements OnInit {
   protected readonly router    = inject(Router);
   private  readonly data       = inject(DataService);
+  private readonly bookCtx = inject(BookContextStore);
   private  readonly toastSvc   = inject(MessageService);
   private  readonly confirmSvc = inject(ConfirmationService);
 
@@ -210,7 +212,7 @@ export class ExpenseListComponent implements OnInit {
 
   private load(): void {
     this.loading.set(true);
-    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
+    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     forkJoin([
       this.data.expenses.getAll(bookId),
       this.data.expenses.getCategories(bookId),

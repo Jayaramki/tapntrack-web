@@ -11,6 +11,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { DataService } from '../../../core/services/data.service';
 import { AuthStore } from '../../../core/stores/auth.store';
+import { BookContextStore } from '../../../core/stores/book-context.store';
 import { ExpenseCategoryConfig } from '../../../core/models/expense.model';
 import { forkJoin } from 'rxjs';
 
@@ -113,6 +114,7 @@ export class ExpenseFormComponent implements OnInit {
   private  readonly route    = inject(ActivatedRoute);
   private  readonly fb       = inject(FormBuilder);
   private  readonly data     = inject(DataService);
+  private readonly bookCtx = inject(BookContextStore);
   private  readonly toastSvc = inject(MessageService);
 
   protected readonly loading = signal(false);
@@ -132,7 +134,7 @@ export class ExpenseFormComponent implements OnInit {
 
   ngOnInit(): void {
     const id     = this.route.snapshot.paramMap.get('id');
-    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
+    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     this.loading.set(true);
 
     if (id) {
@@ -165,7 +167,7 @@ export class ExpenseFormComponent implements OnInit {
     this.saving.set(true);
 
     const v      = this.form.value;
-    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
+    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     const dateStr = (v.expense_date as Date).toISOString().split('T')[0];
 
     const payload = {
