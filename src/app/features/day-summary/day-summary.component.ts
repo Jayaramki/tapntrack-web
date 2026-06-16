@@ -11,6 +11,7 @@ import { AuthStore } from '../../core/stores/auth.store';
 import { BookContextStore } from '../../core/stores/book-context.store';
 import { DaySummary } from '../../core/models/daily-entry.model';
 import { LoanLine } from '../../core/models/loan.model';
+import { Line } from '../../core/models/line.model';
 
 @Component({
   selector: 'app-day-summary',
@@ -75,7 +76,7 @@ import { LoanLine } from '../../core/models/loan.model';
       </div>
       <div class="control-group">
         <span class="control-label">Line</span>
-        <p-select [options]="lineOptions" optionLabel="label" optionValue="value"
+        <p-select [options]="lineOptions()" optionLabel="label" optionValue="value"
                   [ngModel]="selectedLine()" (ngModelChange)="selectedLine.set($event)"
                   styleClass="min-w-36" />
       </div>
@@ -151,7 +152,7 @@ import { LoanLine } from '../../core/models/loan.model';
               <td><span class="font-mono text-sm">{{ entry.loan_number }}</span></td>
               <td>{{ entry.customer_name }}</td>
               <td class="text-sm" style="color:var(--p-text-muted-color)">
-                {{ entry.line ? entry.line.replace('line', 'Line ') : '—' }}
+                {{ entry.line || '—' }}
               </td>
               <td class="text-right font-semibold">₹{{ entry.amount | number }}</td>
               <td>
@@ -203,11 +204,11 @@ export class DaySummaryComponent implements OnInit {
   protected selectedDate: Date = new Date();
   protected readonly today = new Date();
 
-  protected readonly lineOptions = [
+  protected readonly lines = signal<Line[]>([]);
+  protected readonly lineOptions = computed(() => [
     { label: 'All Lines', value: 'all' },
-    ...(['line1','line2','line3','line4','line5','line6'] as LoanLine[])
-      .map(l => ({ label: l.replace('line', 'Line '), value: l })),
-  ];
+    ...this.lines().map(l => ({ label: l.name, value: l.name })),
+  ]);
   protected readonly modeOptions = [
     { label: 'All Modes', value: 'all' as const },
     { label: 'Cash',      value: 'cash' as const },
@@ -236,6 +237,7 @@ export class DaySummaryComponent implements OnInit {
   protected loadSummary(): void {
     this.loading.set(true);
     const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
+    this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
     const d = this.selectedDate;
     const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     this.data.dailyEntries.getDaySummary(bookId, dateStr).subscribe(res => {

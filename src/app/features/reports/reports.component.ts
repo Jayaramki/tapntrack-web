@@ -8,7 +8,9 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { DataService } from '../../core/services/data.service';
 import { AuthStore } from '../../core/stores/auth.store';
+import { BookContextStore } from '../../core/stores/book-context.store';
 import { CollectionReport, LoanReport, ReportFilter } from '../../core/models/dashboard.model';
+import { Line } from '../../core/models/line.model';
 import { forkJoin } from 'rxjs';
 
 @Component({
@@ -72,7 +74,7 @@ import { forkJoin } from 'rxjs';
       </div>
       <div class="filter-group">
         <label class="filter-label">Line</label>
-        <p-select [(ngModel)]="filterLine" [options]="lineOptions" optionLabel="label" optionValue="value" placeholder="All Lines" [showClear]="true" style="width:130px"></p-select>
+        <p-select [(ngModel)]="filterLine" [options]="lines()" optionLabel="name" optionValue="name" placeholder="All Lines" [showClear]="true" style="width:130px"></p-select>
       </div>
       <div class="filter-group" style="justify-content:flex-end">
         <label class="filter-label">&nbsp;</label>
@@ -158,6 +160,7 @@ import { forkJoin } from 'rxjs';
 export class ReportsComponent implements OnInit {
   private data = inject(DataService);
   private msg  = inject(MessageService);
+  private bookCtx = inject(BookContextStore);
 
   collectionReport = signal<CollectionReport[]>([]);
   loanReport       = signal<LoanReport[]>([]);
@@ -173,25 +176,20 @@ export class ReportsComponent implements OnInit {
     { label: 'Weekly',  value: 'weekly'  },
     { label: 'Monthly', value: 'monthly' },
   ];
-  readonly lineOptions = [
-    { label: 'Line 1', value: 'line1' },
-    { label: 'Line 2', value: 'line2' },
-    { label: 'Line 3', value: 'line3' },
-    { label: 'Line 4', value: 'line4' },
-    { label: 'Line 5', value: 'line5' },
-    { label: 'Line 6', value: 'line6' },
-  ];
+  readonly lines = signal<Line[]>([]);
 
   ngOnInit() {
     // Default: current month
     const now = new Date();
     this.filterFrom = new Date(now.getFullYear(), now.getMonth(), 1);
     this.filterTo   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
+    this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
     this.generate();
   }
 
   generate() {
-    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
+    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     const from   = this.filterFrom ? this.toISO(this.filterFrom) : this.toISO(new Date());
     const to     = this.filterTo   ? this.toISO(this.filterTo)   : this.toISO(new Date());
 

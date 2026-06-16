@@ -15,6 +15,7 @@ import { DataService } from '../../core/services/data.service';
 import { AuthStore } from '../../core/stores/auth.store';
 import { BookContextStore } from '../../core/stores/book-context.store';
 import { Loan, LoanLine } from '../../core/models/loan.model';
+import { Line } from '../../core/models/line.model';
 import { DailyEntry } from '../../core/models/daily-entry.model';
 
 interface EntryRow {
@@ -127,7 +128,7 @@ interface EntryRow {
 
       <div class="control-group">
         <span class="control-label">Line</span>
-        <p-select [options]="lineOptions" optionLabel="label" optionValue="value"
+        <p-select [options]="lines()" optionLabel="name" optionValue="name"
                   [(ngModel)]="selectedLine" (ngModelChange)="onLineChange()"
                   placeholder="Select line" styleClass="min-w-36" />
       </div>
@@ -393,8 +394,7 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
   protected selectedLine: LoanLine | '' = '';
   protected readonly today = new Date();
 
-  protected readonly lineOptions = ['line1','line2','line3','line4','line5','line6']
-    .map(l => ({ label: l.replace('line', 'Line '), value: l as LoanLine }));
+  protected readonly lines = signal<Line[]>([]);
 
   // Single-date totals: pending + existing
   protected readonly totalCash = computed(() =>
@@ -432,7 +432,11 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
       .reduce((count, r) => count + dates.filter(d => !r.coveredDates.includes(d)).length, 0);
   });
 
-  ngOnInit(): void { window.addEventListener('resize', this.resizeListener); }
+  ngOnInit(): void {
+    window.addEventListener('resize', this.resizeListener);
+    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
+    this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
+  }
   ngOnDestroy(): void { window.removeEventListener('resize', this.resizeListener); }
 
   protected setMode(multi: boolean): void {

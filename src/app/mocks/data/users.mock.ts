@@ -91,7 +91,7 @@ export const MOCK_USERS: MockUser[] = [
 ];
 
 export const LOGIN_PRESETS = [
-  { username: 'superadmin', password: 'password', hint: 'SuperAdmin (all books)' },
+  { username: 'superadmin', password: 'Admin@123', hint: 'SuperAdmin (all books)' },
   { username: 'bookadmin', password: 'password', hint: 'BookAdmin — Chennai Branch' },
   { username: 'agent', password: 'password', hint: 'FieldAgent — Chennai Branch' },
 ];

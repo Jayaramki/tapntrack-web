@@ -44,6 +44,7 @@ import { HttpLineService } from '../services/http-line.service';
 import { BaseSettingsService, BaseDashboardService, BaseReportsService } from '../services/base-settings.service';
 import { MockSettingsService, MockDashboardService, MockReportsService } from '../../mocks/services/mock-settings.service';
 import { HttpSettingsService } from '../services/http-settings.service';
+import { HttpDashboardService, HttpReportsService } from '../services/http-dashboard.service';
 
 /**
  * DataService acts as a service locator.
@@ -87,7 +88,7 @@ export class DataService {
     this.expenses = environment.useMocks ? inject(MockExpenseService) : inject(HttpExpenseService);
     this.lines = environment.useMocks ? inject(MockLineService) : inject(HttpLineService);
     this.settings = environment.useMocks ? inject(MockSettingsService) : inject(HttpSettingsService);
-    this.dashboard = inject(MockDashboardService);
-    this.reports = inject(MockReportsService);
+    this.dashboard = environment.useMocks ? inject(MockDashboardService) : inject(HttpDashboardService);
+    this.reports = environment.useMocks ? inject(MockReportsService) : inject(HttpReportsService);
   }
 }

@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, signal, computed, inject } from '@angular/core';
+﻿import { Component, signal, computed, inject, effect } from '@angular/core';
 import { Router } from '@angular/router';
 import { CurrencyPipe, NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -8,7 +8,7 @@ import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { forkJoin } from 'rxjs';
 import { DataService } from '../../core/services/data.service';
-import { AuthStore } from '../../core/stores/auth.store';
+import { BookContextStore } from '../../core/stores/book-context.store';
 import { DashboardStats } from '../../core/models/dashboard.model';
 import { PendingLoan } from '../../core/models/loan.model';
 
@@ -231,8 +231,9 @@ type DatePreset = 'today' | 'week' | 'month' | 'custom';
     }
   `,
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent {
   private data    = inject(DataService);
+  private bookCtx = inject(BookContextStore);
   readonly router = inject(Router);
 
   stats        = signal<DashboardStats | null>(null);
@@ -263,24 +264,28 @@ export class DashboardComponent implements OnInit {
     return `${s.date_range.from}  →  ${s.date_range.to}`;
   });
 
-  ngOnInit() {
-    this.applyPreset('month');
+  constructor() {
+    // Reload when the active book (top-bar picker) or the selected preset changes.
+    effect(() => {
+      const bookId = this.bookCtx.bookId();
+      const preset = this.activePreset();
+      if (!bookId || preset === 'custom') return;
+      const [from, to] = this.getPresetRange(preset);
+      this.loadData(bookId, from, to);
+    });
   }
 
   applyPreset(preset: DatePreset) {
-    this.activePreset.set(preset);
-    if (preset === 'custom') return; // wait for date pickers
-    const [from, to] = this.getPresetRange(preset);
-    this.loadData(from, to);
+    this.activePreset.set(preset); // effect reloads (non-custom presets)
   }
 
   onCustomDateChange() {
-    if (!this.customFrom || !this.customTo) return;
-    this.loadData(this.toISO(this.customFrom), this.toISO(this.customTo));
+    const bookId = this.bookCtx.bookId();
+    if (!bookId || !this.customFrom || !this.customTo) return;
+    this.loadData(bookId, this.toISO(this.customFrom), this.toISO(this.customTo));
   }
 
-  private loadData(from: string, to: string) {
-    const bookId = AuthStore.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
+  private loadData(bookId: string, from: string, to: string) {
     this.loading.set(true);
 
     forkJoin({
