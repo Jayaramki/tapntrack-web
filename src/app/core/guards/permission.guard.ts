@@ -11,7 +11,7 @@ export const permissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot) =>
   }
 
   if (required && !AuthStore.hasPermission(required)) {
-    return router.createUrlTree(['/dashboard']);
+    return router.createUrlTree([AuthStore.landingRoute()]);
   }
 
   return true;

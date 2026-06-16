@@ -19,6 +19,14 @@ export const AuthStore = {
     return (_authUser()?.permissions ?? []).includes(permission);
   },
 
+  /** First route the current user is permitted to see (avoids landing on a denied page). */
+  landingRoute(): string {
+    if (this.hasPermission('view-dashboard')) return '/dashboard';
+    if (this.hasPermission('view-loans')) return '/loans';
+    if (this.hasPermission('record-collection')) return '/daily-entry';
+    return '/profile';
+  },
+
   setUser(user: AuthUser): void {
     _authUser.set(user);
     localStorage.setItem('auth_token', user.token);

@@ -184,7 +184,7 @@ export class LoginComponent {
     this.data.auth.login(username!, password!).subscribe({
       next: (res) => {
         AuthStore.setUser(res.data);
-        this.router.navigate(['/dashboard']);
+        this.router.navigate([AuthStore.landingRoute()]);
       },
       error: (err) => {
         this.loading.set(false);
