@@ -1,4 +1,4 @@
-﻿import { Component, signal, inject, OnInit } from '@angular/core';
+﻿import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
@@ -14,6 +14,7 @@ import { DataService } from '../../core/services/data.service';
 import { AuthStore } from '../../core/stores/auth.store';
 import { BookContextStore } from '../../core/stores/book-context.store';
 import { LedgerData, LedgerCell } from '../../core/models/daily-entry.model';
+import { Line } from '../../core/models/line.model';
 import { LoanLine } from '../../core/models/loan.model';
 import { LedgerCellEditorComponent } from './ledger-cell-editor.component';
 
@@ -81,7 +82,7 @@ const MONTH_NAMES = ['January','February','March','April','May','June',
       </div>
       <div class="control-group">
         <span class="control-label">Line</span>
-        <p-select [options]="lineOptions" optionLabel="label" optionValue="value"
+        <p-select [options]="lineOptions()" optionLabel="label" optionValue="value"
                   [(ngModel)]="selectedLine" (ngModelChange)="onLineChange()"
                   styleClass="min-w-36" />
       </div>
@@ -159,11 +160,11 @@ export class LedgerComponent implements OnInit {
 
   protected readonly monthOptions = MONTH_NAMES.map((label, i) => ({ label, value: i + 1 }));
 
-  protected readonly lineOptions = [
+  protected readonly lines = signal<Line[]>([]);
+  protected readonly lineOptions = computed(() => [
     { label: 'All Lines', value: 'all' },
-    ...(['line1','line2','line3','line4','line5','line6'] as LoanLine[])
-      .map(l => ({ label: l.replace('line', 'Line '), value: l })),
-  ];
+    ...this.lines().map(l => ({ label: l.name, value: l.name })),
+  ]);
 
   ngOnInit(): void { this.loadLedger(); }
 
@@ -174,6 +175,7 @@ export class LedgerComponent implements OnInit {
   protected loadLedger(): void {
     this.loading.set(true);
     const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
+    this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
     this.data.ledger.getLedger(bookId, this.selectedYear, this.selectedMonth).subscribe(res => {
       this.ledgerData.set(res.data);
       this.colDefs = this.buildColDefs(res.data);

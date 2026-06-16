@@ -49,6 +49,7 @@ export const routes: Routes = [
       { path: 'expenses/new', loadComponent: () => import('./features/expenses/expense-form/expense-form.component').then(m => m.ExpenseFormComponent), canActivate: [permissionGuard], data: { permission: 'manage-expenses' } },
       { path: 'expenses/:id/edit', loadComponent: () => import('./features/expenses/expense-form/expense-form.component').then(m => m.ExpenseFormComponent), canActivate: [permissionGuard], data: { permission: 'manage-expenses' } },
       { path: 'reports', loadComponent: () => import('./features/reports/reports.component').then(m => m.ReportsComponent), canActivate: [permissionGuard], data: { permission: 'view-reports' } },
+      { path: 'masters', loadComponent: () => import('./features/masters/masters.component').then(m => m.MastersComponent), canActivate: [permissionGuard], data: { permission: 'manage-settings' } },
       { path: 'settings', loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent), canActivate: [permissionGuard], data: { permission: 'manage-settings' } },
       { path: 'profile', loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent), canActivate: [authGuard] },
     ],

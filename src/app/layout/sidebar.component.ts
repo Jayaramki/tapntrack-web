@@ -24,6 +24,7 @@ const MENU_ITEMS: MenuItem[] = [
   { label: 'Ledger',       shortLabel: 'Ledger',  icon: 'pi pi-table',        route: '/ledger',       permission: 'view-ledger' },
   { label: 'Expenses',     shortLabel: 'Expense', icon: 'pi pi-wallet',       route: '/expenses',     permission: 'manage-expenses' },
   { label: 'Reports',      shortLabel: 'Reports', icon: 'pi pi-chart-line',   route: '/reports',      permission: 'view-reports' },
+  { label: 'Masters',      shortLabel: 'Masters', icon: 'pi pi-database',     route: '/masters',      permission: 'manage-settings' },
   { label: 'Settings',     shortLabel: 'Settings',icon: 'pi pi-cog',          route: '/settings',     permission: 'manage-settings' },
 ];
 

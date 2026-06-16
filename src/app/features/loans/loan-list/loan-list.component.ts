@@ -14,6 +14,7 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 import { DataService } from '../../../core/services/data.service';
 import { BookContextStore } from '../../../core/stores/book-context.store';
 import { Loan } from '../../../core/models/loan.model';
+import { Line } from '../../../core/models/line.model';
 import { ResponsiveService } from '../../../core/services/responsive.service';
 import { CardPaginatorComponent } from '../../../shared/components/card-paginator/card-paginator.component';
 
@@ -70,7 +71,7 @@ import { CardPaginatorComponent } from '../../../shared/components/card-paginato
       <p-select [options]="typeOptions" optionLabel="label" optionValue="value"
                 [ngModel]="filterType()" (ngModelChange)="filterType.set($event ?? '')"
                 placeholder="All Types" [showClear]="true" styleClass="min-w-32" />
-      <p-select [options]="lineOptions" optionLabel="label" optionValue="value"
+      <p-select [options]="lines()" optionLabel="name" optionValue="name"
                 [ngModel]="filterLine()" (ngModelChange)="filterLine.set($event ?? '')"
                 placeholder="All Lines" [showClear]="true" styleClass="min-w-32" />
       <p-select [options]="statusOptions" optionLabel="label" optionValue="value"
@@ -216,8 +217,7 @@ export class LoanListComponent {
     { label: 'Weekly', value: 'weekly' },
     { label: 'Monthly', value: 'monthly' },
   ];
-  protected readonly lineOptions = ['line1','line2','line3','line4','line5','line6']
-    .map(l => ({ label: l.replace('line', 'Line '), value: l }));
+  protected readonly lines = signal<Line[]>([]);
   protected readonly statusOptions = [
     { label: 'Active', value: 'active' },
     { label: 'Completed', value: 'completed' },
@@ -265,6 +265,7 @@ export class LoanListComponent {
       this.loans.set(r.data);
       this.loading.set(false);
     });
+    this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
   }
 
   protected typeSeverity(type: string): 'info' | 'success' | 'warn' {

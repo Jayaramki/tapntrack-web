@@ -16,6 +16,7 @@ import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
 import { DataService } from '../../../core/services/data.service';
 import { BookContextStore } from '../../../core/stores/book-context.store';
+import { Line } from '../../../core/models/line.model';
 import { Customer } from '../../../core/models/customer.model';
 
 @Component({
@@ -139,8 +140,8 @@ import { Customer } from '../../../core/models/customer.model';
 
             <div class="field">
               <label>Line <span style="color:var(--p-red-500)">*</span></label>
-              <p-select formControlName="line" [options]="lineOptions"
-                        optionLabel="label" optionValue="value"
+              <p-select formControlName="line" [options]="lines()"
+                        optionLabel="name" optionValue="name"
                         placeholder="Select line" styleClass="w-full"
                         [class.ng-invalid]="isInvalid('line')" />
               @if (isInvalid('line')) {
@@ -235,8 +236,7 @@ export class LoanFormComponent implements OnInit {
     { label: 'Weekly', value: 'weekly' },
     { label: 'Monthly', value: 'monthly' },
   ];
-  protected readonly lineOptions = ['line1','line2','line3','line4','line5','line6']
-    .map(l => ({ label: l.replace('line', 'Line '), value: l }));
+  protected readonly lines = signal<Line[]>([]);
 
   protected readonly form = this.fb.group({
     book_id:         [this.bookCtx.bookId() ?? '', Validators.required],
@@ -292,6 +292,7 @@ export class LoanFormComponent implements OnInit {
 
   private loadCustomers(bookId: string): void {
     this.data.customers.getAll(bookId).subscribe(r => this.allCustomers.set(r.data));
+    this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
   }
 
   protected searchCustomers(event: { query: string }): void {

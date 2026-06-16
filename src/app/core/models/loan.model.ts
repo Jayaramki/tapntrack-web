@@ -1,5 +1,6 @@
 export type LoanType = 'daily' | 'weekly' | 'monthly';
-export type LoanLine = 'line1' | 'line2' | 'line3' | 'line4' | 'line5' | 'line6';
+// Lines are now user-defined masters (per book); the value is the line name.
+export type LoanLine = string;
 
 export interface Loan {
   id: string;

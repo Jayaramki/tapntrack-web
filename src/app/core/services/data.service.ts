@@ -35,6 +35,11 @@ import { BaseExpenseService } from '../services/base-expense.service';
 import { MockExpenseService } from '../../mocks/services/mock-expense.service';
 import { HttpExpenseService } from '../services/http-expense.service';
 
+// Line (master)
+import { BaseLineService } from '../services/base-line.service';
+import { MockLineService } from '../../mocks/services/mock-line.service';
+import { HttpLineService } from '../services/http-line.service';
+
 // Settings, Dashboard, Reports
 import { BaseSettingsService, BaseDashboardService, BaseReportsService } from '../services/base-settings.service';
 import { MockSettingsService, MockDashboardService, MockReportsService } from '../../mocks/services/mock-settings.service';
@@ -59,6 +64,7 @@ export class DataService {
   readonly dailyEntries: BaseDailyEntryService;
   readonly ledger: BaseLedgerService;
   readonly expenses: BaseExpenseService;
+  readonly lines: BaseLineService;
   readonly settings: BaseSettingsService;
   readonly dashboard: BaseDashboardService;
   readonly reports: BaseReportsService;
@@ -79,6 +85,7 @@ export class DataService {
     this.dailyEntries = environment.useMocks ? inject(MockDailyEntryService) : inject(HttpDailyEntryService);
     this.ledger = environment.useMocks ? inject(MockLedgerService) : inject(HttpLedgerService);
     this.expenses = environment.useMocks ? inject(MockExpenseService) : inject(HttpExpenseService);
+    this.lines = environment.useMocks ? inject(MockLineService) : inject(HttpLineService);
     this.settings = environment.useMocks ? inject(MockSettingsService) : inject(HttpSettingsService);
     this.dashboard = inject(MockDashboardService);
     this.reports = inject(MockReportsService);

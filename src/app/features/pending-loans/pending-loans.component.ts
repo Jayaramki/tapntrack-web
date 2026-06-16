@@ -11,6 +11,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DataService } from '../../core/services/data.service';
 import { BookContextStore } from '../../core/stores/book-context.store';
 import { PendingLoan } from '../../core/models/loan.model';
+import { Line } from '../../core/models/line.model';
 import { ResponsiveService } from '../../core/services/responsive.service';
 import { CardPaginatorComponent } from '../../shared/components/card-paginator/card-paginator.component';
 
@@ -58,7 +59,7 @@ import { CardPaginatorComponent } from '../../shared/components/card-paginator/c
 
 
     <div class="filters">
-      <p-select [options]="lineOptions" optionLabel="label" optionValue="value"
+      <p-select [options]="lines()" optionLabel="name" optionValue="name"
                 [ngModel]="filterLine()" (ngModelChange)="filterLine.set($event ?? '')"
                 placeholder="All Lines" [showClear]="true" styleClass="min-w-36" />
       <span style="font-size:0.85rem; color:var(--p-text-muted-color)">
@@ -225,8 +226,7 @@ export class PendingLoansComponent {
     return loans.slice(start, start + this.mobilePageSize);
   }
 
-  protected readonly lineOptions = ['line1','line2','line3','line4','line5','line6']
-    .map(l => ({ label: l.replace('line', 'Line '), value: l }));
+  protected readonly lines = signal<Line[]>([]);
 
   protected readonly activeTabLoans = computed(() => {
     const type = this.activeTab();
@@ -263,5 +263,6 @@ export class PendingLoansComponent {
       this.allPending.set(r.data);
       this.loading.set(false);
     });
+    this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
   }
 }
