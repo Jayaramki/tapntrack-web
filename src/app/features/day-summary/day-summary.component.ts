@@ -245,9 +245,12 @@ export class DaySummaryComponent {
     this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
     const d = this.selectedDate;
     const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    this.data.dailyEntries.getDaySummary(bookId, dateStr).subscribe(res => {
-      this.summary.set(res.data);
-      this.loading.set(false);
+    this.data.dailyEntries.getDaySummary(bookId, dateStr).subscribe({
+      next: (res) => {
+        this.summary.set(res.data);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
   }
 

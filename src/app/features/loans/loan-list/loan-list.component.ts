@@ -261,9 +261,12 @@ export class LoanListComponent {
 
   private loadLoans(bookId: string): void {
     this.loading.set(true);
-    this.data.loans.getAll(bookId).subscribe(r => {
-      this.loans.set(r.data);
-      this.loading.set(false);
+    this.data.loans.getAll(bookId).subscribe({
+      next: (r) => {
+        this.loans.set(r.data);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
     this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
   }

@@ -221,11 +221,14 @@ export class ExpenseListComponent {
     forkJoin([
       this.data.expenses.getAll(bookId),
       this.data.expenses.getCategories(bookId),
-    ]).subscribe(([expRes, catRes]) => {
-      this.expenses.set(expRes.data);
-      this.categories.set(catRes.data);
-      this.applyFilters();
-      this.loading.set(false);
+    ]).subscribe({
+      next: ([expRes, catRes]) => {
+        this.expenses.set(expRes.data);
+        this.categories.set(catRes.data);
+        this.applyFilters();
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
   }
 

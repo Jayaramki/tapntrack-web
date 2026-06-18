@@ -89,7 +89,7 @@ const ROLE_SEVERITY: Record<UserRole, string> = {
       <ng-template #body let-user>
         <tr>
           <td>
-            <div class="user-name">{{ user.first_name }} {{ user.last_name }}</div>
+            <div class="user-name">{{ displayName(user) }}</div>
             @if (responsive.isMobile()) {
               <div class="user-username">&#64;{{ user.username }}</div>
             }
@@ -157,17 +157,25 @@ export class UserListComponent implements OnInit {
     if (this.filterRole) list = list.filter(u => u.role === this.filterRole);
     const q = this.searchTerm.toLowerCase();
     if (q) list = list.filter(u =>
-      `${u.first_name} ${u.last_name}`.toLowerCase().includes(q) ||
+      this.displayName(u).toLowerCase().includes(q) ||
       u.username.toLowerCase().includes(q)
     );
     return list;
   });
 
+  /** Full name, falling back to username when first/last are empty. */
+  protected displayName(u: { first_name?: string | null; last_name?: string | null; username: string }): string {
+    return `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim() || u.username;
+  }
+
   ngOnInit(): void {
     const bookId = AuthStore.bookId() ?? undefined;
-    this.data.users.getAll(bookId).subscribe(res => {
-      this.users.set(res.data);
-      this.loading.set(false);
+    this.data.users.getAll(bookId).subscribe({
+      next: (res) => {
+        this.users.set(res.data);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
     this.data.books.getAll().subscribe(res => this.books.set(res.data));
   }

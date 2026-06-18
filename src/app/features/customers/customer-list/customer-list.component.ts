@@ -126,9 +126,12 @@ export class CustomerListComponent {
       const bookId = this.bookCtx.bookId();
       if (!bookId) return;
       this.loading.set(true);
-      this.data.customers.getAll(bookId).subscribe(res => {
-        this.customers.set(res.data);
-        this.loading.set(false);
+      this.data.customers.getAll(bookId).subscribe({
+        next: (res) => {
+          this.customers.set(res.data);
+          this.loading.set(false);
+        },
+        error: () => this.loading.set(false),
       });
     });
   }

@@ -181,12 +181,15 @@ export class LedgerComponent {
     this.loading.set(true);
     const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
-    this.data.ledger.getLedger(bookId, this.selectedYear, this.selectedMonth).subscribe(res => {
-      this.ledgerData.set(res.data);
-      this.colDefs = this.buildColDefs(res.data);
-      this.rowData = this.buildRowData(res.data);
-      this.pinnedBottomRowData.set([this.buildTotalRow(this.rowData, res.data)]);
-      this.loading.set(false);
+    this.data.ledger.getLedger(bookId, this.selectedYear, this.selectedMonth).subscribe({
+      next: (res) => {
+        this.ledgerData.set(res.data);
+        this.colDefs = this.buildColDefs(res.data);
+        this.rowData = this.buildRowData(res.data);
+        this.pinnedBottomRowData.set([this.buildTotalRow(this.rowData, res.data)]);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
   }
 

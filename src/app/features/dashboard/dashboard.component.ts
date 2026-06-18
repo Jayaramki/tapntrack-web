@@ -291,11 +291,14 @@ export class DashboardComponent {
     forkJoin({
       statsRes:   this.data.dashboard.getStats(bookId, from, to),
       pendingRes: this.data.loans.getPending(bookId),
-    }).subscribe(({ statsRes, pendingRes }) => {
-      this.stats.set(statsRes.data ?? null);
-      const sorted = (pendingRes.data ?? []).sort((a, b) => b.act_pending_days - a.act_pending_days);
-      this.pendingLoans.set(sorted);
-      this.loading.set(false);
+    }).subscribe({
+      next: ({ statsRes, pendingRes }) => {
+        this.stats.set(statsRes.data ?? null);
+        const sorted = (pendingRes.data ?? []).sort((a, b) => b.act_pending_days - a.act_pending_days);
+        this.pendingLoans.set(sorted);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
   }
 

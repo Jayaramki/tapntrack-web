@@ -474,41 +474,50 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
 
-    this.data.loans.getAll(bookId).subscribe(loansRes => {
-      const loans = loansRes.data.filter(l => l.line === this.selectedLine && !l.completed_date);
+    this.data.loans.getAll(bookId).subscribe({
+      next: (loansRes) => {
+        const loans = loansRes.data.filter(l => l.line === this.selectedLine && !l.completed_date);
 
-      if (!this.multiDateMode()) {
-        this.data.dailyEntries.getByDate(bookId, this.toDateStr(this.selectedDate)).subscribe(entriesRes => {
-          this.rows.set(loans.map(loan => ({
-            loan, amount: null, mode: 'cash',
-            existingEntry: entriesRes.data.find(e => e.loan_id === loan.id) ?? null,
-            coveredDates: [], saving: false,
-          })));
-          this.loading.set(false);
-        });
-      } else {
-        // Multi-date: check coverage for every selected date in parallel
-        const dates = this.selectedDatesArr.map(d => this.toDateStr(d));
-        const dateChecks: Observable<{ data: DailyEntry[] }>[] =
-          dates.map(d => this.data.dailyEntries.getByDate(bookId, d));
-
-        forkJoin(dateChecks).subscribe(results => {
-          const coverageMap = new Map<string, string[]>();
-          results.forEach((res, i) => {
-            res.data.forEach(e => {
-              if (!coverageMap.has(e.loan_id)) coverageMap.set(e.loan_id, []);
-              coverageMap.get(e.loan_id)!.push(dates[i]);
-            });
+        if (!this.multiDateMode()) {
+          this.data.dailyEntries.getByDate(bookId, this.toDateStr(this.selectedDate)).subscribe({
+            next: (entriesRes) => {
+              this.rows.set(loans.map(loan => ({
+                loan, amount: null, mode: 'cash',
+                existingEntry: entriesRes.data.find(e => e.loan_id === loan.id) ?? null,
+                coveredDates: [], saving: false,
+              })));
+              this.loading.set(false);
+            },
+            error: () => this.loading.set(false),
           });
-          this.rows.set(loans.map(loan => ({
-            loan, amount: null, mode: 'cash',
-            existingEntry: null,
-            coveredDates: coverageMap.get(loan.id) ?? [],
-            saving: false,
-          })));
-          this.loading.set(false);
-        });
-      }
+        } else {
+          // Multi-date: check coverage for every selected date in parallel
+          const dates = this.selectedDatesArr.map(d => this.toDateStr(d));
+          const dateChecks: Observable<{ data: DailyEntry[] }>[] =
+            dates.map(d => this.data.dailyEntries.getByDate(bookId, d));
+
+          forkJoin(dateChecks).subscribe({
+            next: (results) => {
+              const coverageMap = new Map<string, string[]>();
+              results.forEach((res, i) => {
+                res.data.forEach(e => {
+                  if (!coverageMap.has(e.loan_id)) coverageMap.set(e.loan_id, []);
+                  coverageMap.get(e.loan_id)!.push(dates[i]);
+                });
+              });
+              this.rows.set(loans.map(loan => ({
+                loan, amount: null, mode: 'cash',
+                existingEntry: null,
+                coveredDates: coverageMap.get(loan.id) ?? [],
+                saving: false,
+              })));
+              this.loading.set(false);
+            },
+            error: () => this.loading.set(false),
+          });
+        }
+      },
+      error: () => this.loading.set(false),
     });
   }
 
@@ -519,12 +528,19 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
     this.data.dailyEntries.create({
       book_id: bookId, loan_id: row.loan.id,
       entry_date: this.toDateStr(this.selectedDate), amount: row.amount, mode: row.mode,
-    }).subscribe(res => {
-      row.existingEntry = res.data;
-      row.amount = null;
-      row.saving = false;
-      this.rows.update(r => [...r]);
-      this.toastSvc.add({ severity: 'success', summary: 'Saved', detail: row.loan.customer_name, life: 1500 });
+    }).subscribe({
+      next: (res) => {
+        row.existingEntry = res.data;
+        row.amount = null;
+        row.saving = false;
+        this.rows.update(r => [...r]);
+        this.toastSvc.add({ severity: 'success', summary: 'Saved', detail: row.loan.customer_name, life: 1500 });
+      },
+      error: () => {
+        row.saving = false;
+        this.rows.update(r => [...r]);
+        this.toastSvc.add({ severity: 'error', summary: 'Save failed', detail: row.loan.customer_name, life: 2500 });
+      },
     });
   }
 
@@ -539,14 +555,20 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
         book_id: bookId,
         entry_date: this.toDateStr(this.selectedDate),
         entries: pending.map(r => ({ loan_id: r.loan.id, amount: r.amount!, mode: r.mode })),
-      }).subscribe(res => {
-        res.data.forEach(entry => {
-          const row = this.rows().find(r => r.loan.id === entry.loan_id);
-          if (row) { row.existingEntry = entry; row.amount = null; }
-        });
-        this.rows.update(r => [...r]);
-        this.submittingAll.set(false);
-        this.toastSvc.add({ severity: 'success', summary: 'Submitted', detail: `${pending.length} entries recorded`, life: 2500 });
+      }).subscribe({
+        next: (res) => {
+          res.data.forEach(entry => {
+            const row = this.rows().find(r => r.loan.id === entry.loan_id);
+            if (row) { row.existingEntry = entry; row.amount = null; }
+          });
+          this.rows.update(r => [...r]);
+          this.submittingAll.set(false);
+          this.toastSvc.add({ severity: 'success', summary: 'Submitted', detail: `${pending.length} entries recorded`, life: 2500 });
+        },
+        error: () => {
+          this.submittingAll.set(false);
+          this.toastSvc.add({ severity: 'error', summary: 'Submit failed', detail: 'Please try again', life: 3000 });
+        },
       });
     } else {
       // Multi-date: one bulkCreate per date (skip dates already covered per loan)
@@ -564,19 +586,25 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
         });
       });
 
-      forkJoin(dateObs).subscribe(results => {
-        const totalCreated = results.reduce((n, r) => n + r.data.length, 0);
-        const skipped = (rows.length * dates.length) - totalCreated;
-        // Mark all dates as covered for submitted rows
-        this.rows.update(rowList => rowList.map(r =>
-          (r.amount ?? 0) > 0 ? { ...r, coveredDates: dates, amount: null } : r
-        ));
-        this.submittingAll.set(false);
-        this.toastSvc.add({
-          severity: 'success', summary: 'Multi-date entries saved',
-          detail: `${totalCreated} entries created across ${dates.length} days${skipped > 0 ? ` (${skipped} skipped – already existed)` : ''}`,
-          life: 4000,
-        });
+      forkJoin(dateObs).subscribe({
+        next: (results) => {
+          const totalCreated = results.reduce((n, r) => n + r.data.length, 0);
+          const skipped = (rows.length * dates.length) - totalCreated;
+          // Mark all dates as covered for submitted rows
+          this.rows.update(rowList => rowList.map(r =>
+            (r.amount ?? 0) > 0 ? { ...r, coveredDates: dates, amount: null } : r
+          ));
+          this.submittingAll.set(false);
+          this.toastSvc.add({
+            severity: 'success', summary: 'Multi-date entries saved',
+            detail: `${totalCreated} entries created across ${dates.length} days${skipped > 0 ? ` (${skipped} skipped – already existed)` : ''}`,
+            life: 4000,
+          });
+        },
+        error: () => {
+          this.submittingAll.set(false);
+          this.toastSvc.add({ severity: 'error', summary: 'Submit failed', detail: 'Please try again', life: 3000 });
+        },
       });
     }
   }

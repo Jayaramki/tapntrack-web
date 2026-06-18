@@ -259,9 +259,12 @@ export class PendingLoansComponent {
 
   private loadPending(bookId: string): void {
     this.loading.set(true);
-    this.data.loans.getPending(bookId).subscribe(r => {
-      this.allPending.set(r.data);
-      this.loading.set(false);
+    this.data.loans.getPending(bookId).subscribe({
+      next: (r) => {
+        this.allPending.set(r.data);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
     this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
   }

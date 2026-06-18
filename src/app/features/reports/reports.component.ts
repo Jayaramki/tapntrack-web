@@ -210,10 +210,13 @@ export class ReportsComponent {
     forkJoin({
       col:   this.data.reports.getCollectionReport(filter),
       loans: this.data.reports.getLoanReport(filter),
-    }).subscribe(({ col, loans }) => {
-      this.collectionReport.set(col.data ?? []);
-      this.loanReport.set(loans.data ?? []);
-      this.loading.set(false);
+    }).subscribe({
+      next: ({ col, loans }) => {
+        this.collectionReport.set(col.data ?? []);
+        this.loanReport.set(loans.data ?? []);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
   }
 

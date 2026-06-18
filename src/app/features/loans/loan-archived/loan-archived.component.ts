@@ -125,9 +125,12 @@ export class LoanArchivedComponent {
 
   private loadLoans(bookId: string): void {
     this.loading.set(true);
-    this.data.loans.getArchived(bookId).subscribe(r => {
-      this.loans.set(r.data);
-      this.loading.set(false);
+    this.data.loans.getArchived(bookId).subscribe({
+      next: (r) => {
+        this.loans.set(r.data);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
   }
 

@@ -83,9 +83,15 @@ export class SettingsComponent {
     const value  = this.settingValues[key] ?? '';
     if (!bookId || !value.trim()) return;
     this.savingKey.set(key);
-    this.data.settings.update(bookId, { key, value }).subscribe(() => {
-      this.savingKey.set('');
-      this.msg.add({ severity: 'success', summary: 'Saved', detail: 'Setting updated', life: 2000 });
+    this.data.settings.update(bookId, { key, value }).subscribe({
+      next: () => {
+        this.savingKey.set('');
+        this.msg.add({ severity: 'success', summary: 'Saved', detail: 'Setting updated', life: 2000 });
+      },
+      error: () => {
+        this.savingKey.set('');
+        this.msg.add({ severity: 'error', summary: 'Save failed', detail: 'Please try again', life: 3000 });
+      },
     });
   }
 }
