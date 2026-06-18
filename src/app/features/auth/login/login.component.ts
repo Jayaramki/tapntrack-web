@@ -214,16 +214,10 @@ export class LoginComponent {
     this.data.auth.login(username!, password!, slug).subscribe({
       next: (res) => {
         AuthStore.setUser(res.data);
-        const landing = AuthStore.landingRoute();
-        const tenant = res.data.tenant_slug;
-        // Move to /<slug>/... so the address bar reflects the workspace (full
-        // reload re-sets the router base href). The platform owner (super_admin)
-        // spans all tenants, so keep them on tenant-agnostic flat URLs.
-        if (tenant && res.data.role !== 'super_admin' && this.urlTenant !== tenant) {
-          window.location.assign(`/${tenant}${landing}`);
-        } else {
-          this.router.navigate([landing]);
-        }
+        // The URL style you log in with is the one you keep: a flat /login lands
+        // on /dashboard; a tenant /<slug>/login lands on /<slug>/dashboard — the
+        // router base href set at bootstrap supplies the prefix. No reload.
+        this.router.navigate([AuthStore.landingRoute()]);
       },
       error: (err) => {
         this.loading.set(false);
