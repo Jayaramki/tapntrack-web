@@ -3,6 +3,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/ro
 import { filter } from 'rxjs';
 import { TooltipModule } from 'primeng/tooltip';
 import { AuthStore } from '../core/stores/auth.store';
+import { ImpersonationStore } from '../core/stores/impersonation.store';
 import { ResponsiveService } from '../core/services/responsive.service';
 
 interface MenuItem {
@@ -28,11 +29,16 @@ const OPERATIONAL_ITEMS: MenuItem[] = [
 
 // Rarely-touched admin/config screens — grouped under one collapsible header.
 const ADMIN_ITEMS: MenuItem[] = [
-  { label: 'Tenants',      shortLabel: 'Tenants', icon: 'pi pi-sitemap',      route: '/admin/tenants',permission: 'manage-tenants' },
   { label: 'Books',        shortLabel: 'Books',   icon: 'pi pi-building',     route: '/books',        permission: 'manage-books' },
   { label: 'Users',        shortLabel: 'Users',   icon: 'pi pi-users',        route: '/users',        permission: 'manage-users' },
   { label: 'Masters',      shortLabel: 'Masters', icon: 'pi pi-database',     route: '/masters',      permission: 'manage-settings' },
   { label: 'Settings',     shortLabel: 'Settings',icon: 'pi pi-cog',          route: '/settings',     permission: 'manage-settings' },
+];
+
+// Platform-operator screens — shown only to a super_admin who is NOT
+// impersonating (when impersonating, they see the tenant menu instead).
+const PLATFORM_ITEMS: MenuItem[] = [
+  { label: 'Tenants',      shortLabel: 'Tenants', icon: 'pi pi-sitemap',      route: '/admin/tenants',permission: 'manage-tenants' },
 ];
 
 const ADMIN_ROUTES = ADMIN_ITEMS.map(i => i.route);
@@ -303,6 +309,16 @@ const ADMIN_ROUTES = ADMIN_ITEMS.map(i => i.route);
         </div>
 
         <ul class="menu-list">
+          @for (item of platformItems(); track item.route) {
+            <li class="menu-item">
+              <a [routerLink]="item.route" routerLinkActive="active-link"
+                 [pTooltip]="collapsed() ? item.label : ''" tooltipPosition="right">
+                <i [class]="item.icon"></i>
+                @if (!collapsed()) { <span>{{ item.label }}</span> }
+              </a>
+            </li>
+          }
+
           @for (item of operationalItems(); track item.route) {
             <li class="menu-item">
               <a [routerLink]="item.route" routerLinkActive="active-link"
@@ -378,6 +394,16 @@ const ADMIN_ROUTES = ADMIN_ITEMS.map(i => i.route);
           </div>
 
           <ul class="drawer-menu">
+            @for (item of platformItems(); track item.route) {
+              <li>
+                <a [routerLink]="item.route" routerLinkActive="active-link"
+                   (click)="drawerClose.emit()">
+                  <i [class]="item.icon"></i>
+                  <span>{{ item.label }}</span>
+                </a>
+              </li>
+            }
+
             @for (item of operationalItems(); track item.route) {
               <li>
                 <a [routerLink]="item.route" routerLinkActive="active-link"
@@ -436,15 +462,33 @@ export class SidebarComponent {
   // and highlight when one of its routes is active.
   private readonly currentUrl = signal(this.router.url);
 
-  protected readonly operationalItems = computed(() =>
-    OPERATIONAL_ITEMS.filter(item => AuthStore.hasPermission(item.permission))
-  );
-  protected readonly adminItems = computed(() =>
-    ADMIN_ITEMS.filter(item => AuthStore.hasPermission(item.permission))
+  // Platform context = a super_admin who is NOT impersonating. They operate the
+  // platform (Tenants), not a workspace, so the tenant menu is hidden for them.
+  private readonly platformContext = computed(() =>
+    AuthStore.role() === 'super_admin' && !ImpersonationStore.isActive()
   );
 
-  // Bottom nav (mobile) is operational-only — admin screens live in the drawer.
-  protected readonly bottomNavItems = computed(() => this.operationalItems().slice(0, 5));
+  protected readonly platformItems = computed(() =>
+    this.platformContext()
+      ? PLATFORM_ITEMS.filter(item => AuthStore.hasPermission(item.permission))
+      : []
+  );
+  protected readonly operationalItems = computed(() =>
+    this.platformContext()
+      ? []
+      : OPERATIONAL_ITEMS.filter(item => AuthStore.hasPermission(item.permission))
+  );
+  protected readonly adminItems = computed(() =>
+    this.platformContext()
+      ? []
+      : ADMIN_ITEMS.filter(item => AuthStore.hasPermission(item.permission))
+  );
+
+  // Bottom nav (mobile): platform items for the platform operator, else the
+  // first few operational items (admin screens live in the drawer).
+  protected readonly bottomNavItems = computed(() =>
+    this.platformContext() ? this.platformItems() : this.operationalItems().slice(0, 5)
+  );
 
   // Is an Administration route currently active?
   protected readonly adminActive = computed(() => {
