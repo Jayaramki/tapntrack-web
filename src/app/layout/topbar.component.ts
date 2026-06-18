@@ -43,7 +43,7 @@ import { DataService } from '../core/services/data.service';
                   (onClick)="menuToggle.emit()" pTooltip="Toggle menu" tooltipPosition="bottom" />
         <span class="app-title">{{ appTitle() }}</span>
 
-        @if (bookCtx.isSuperAdmin()) {
+        @if (bookCtx.usesPicker()) {
           <p-select [options]="bookCtx.books()" optionLabel="name" optionValue="id"
                     [ngModel]="bookCtx.selectedBookId()" (ngModelChange)="bookCtx.setBook($event)"
                     placeholder="Select book" styleClass="book-picker"

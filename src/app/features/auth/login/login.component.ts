@@ -99,6 +99,15 @@ import { LOGIN_PRESETS } from '../../../mocks/data/users.mock';
 
           <form [formGroup]="form" (ngSubmit)="onSubmit()">
             <div class="field">
+              <label for="workspace">Workspace</label>
+              <input pInputText id="workspace" formControlName="tenantSlug"
+                     placeholder="your-workspace" class="w-full" autocapitalize="off" />
+              <div class="field-error" style="color:var(--p-text-muted-color);">
+                Leave blank if you have a single workspace.
+              </div>
+            </div>
+
+            <div class="field">
               <label for="username">Username</label>
               <input pInputText id="username" formControlName="username"
                      placeholder="Enter username" class="w-full"
@@ -134,6 +143,14 @@ import { LOGIN_PRESETS } from '../../../mocks/data/users.mock';
                       [loading]="loading()" [fluid]="true" />
           </form>
 
+          <div style="text-align:center; margin-top:16px; font-size:0.875rem;">
+            New here?
+            <a routerLink="/register"
+               style="color:var(--p-primary-color); text-decoration:none; font-weight:600;">
+              Create a workspace
+            </a>
+          </div>
+
           <!-- Dev presets -->
           <div class="presets">
             <div class="presets-label">🔑 Dev login presets:</div>
@@ -159,6 +176,7 @@ export class LoginComponent {
   protected readonly loginPresets = LOGIN_PRESETS;
 
   protected readonly form = this.fb.group({
+    tenantSlug: [AuthStore.lastTenantSlug() ?? ''],
     username: ['', Validators.required],
     password: ['', Validators.required],
     rememberMe: [false],
@@ -180,8 +198,9 @@ export class LoginComponent {
     }
     this.loading.set(true);
     this.errorMessage.set(null);
-    const { username, password } = this.form.value;
-    this.data.auth.login(username!, password!).subscribe({
+    const { username, password, tenantSlug } = this.form.value;
+    const slug = tenantSlug?.trim().toLowerCase() || null;
+    this.data.auth.login(username!, password!, slug).subscribe({
       next: (res) => {
         AuthStore.setUser(res.data);
         this.router.navigate([AuthStore.landingRoute()]);

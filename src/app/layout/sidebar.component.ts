@@ -1,5 +1,6 @@
-import { Component, computed, input, output, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, computed, effect, input, output, inject, signal } from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { filter } from 'rxjs';
 import { TooltipModule } from 'primeng/tooltip';
 import { AuthStore } from '../core/stores/auth.store';
 import { ResponsiveService } from '../core/services/responsive.service';
@@ -12,10 +13,9 @@ interface MenuItem {
   permission: string;
 }
 
-const MENU_ITEMS: MenuItem[] = [
+// Daily-use screens — kept flat (one tap) for quick access.
+const OPERATIONAL_ITEMS: MenuItem[] = [
   { label: 'Dashboard',    shortLabel: 'Home',    icon: 'pi pi-home',         route: '/dashboard',    permission: 'view-dashboard' },
-  { label: 'Books',        shortLabel: 'Books',   icon: 'pi pi-building',     route: '/books',        permission: 'manage-books' },
-  { label: 'Users',        shortLabel: 'Users',   icon: 'pi pi-users',        route: '/users',        permission: 'manage-users' },
   { label: 'Customers',    shortLabel: 'Customers',icon: 'pi pi-user',         route: '/customers',    permission: 'manage-customers' },
   { label: 'Loans',        shortLabel: 'Loans',   icon: 'pi pi-credit-card',  route: '/loans',        permission: 'view-loans' },
   { label: 'Pending',      shortLabel: 'Pending', icon: 'pi pi-clock',        route: '/pending-loans',permission: 'view-pending-loans' },
@@ -24,9 +24,17 @@ const MENU_ITEMS: MenuItem[] = [
   { label: 'Ledger',       shortLabel: 'Ledger',  icon: 'pi pi-table',        route: '/ledger',       permission: 'view-ledger' },
   { label: 'Expenses',     shortLabel: 'Expense', icon: 'pi pi-wallet',       route: '/expenses',     permission: 'manage-expenses' },
   { label: 'Reports',      shortLabel: 'Reports', icon: 'pi pi-chart-line',   route: '/reports',      permission: 'view-reports' },
+];
+
+// Rarely-touched admin/config screens — grouped under one collapsible header.
+const ADMIN_ITEMS: MenuItem[] = [
+  { label: 'Books',        shortLabel: 'Books',   icon: 'pi pi-building',     route: '/books',        permission: 'manage-books' },
+  { label: 'Users',        shortLabel: 'Users',   icon: 'pi pi-users',        route: '/users',        permission: 'manage-users' },
   { label: 'Masters',      shortLabel: 'Masters', icon: 'pi pi-database',     route: '/masters',      permission: 'manage-settings' },
   { label: 'Settings',     shortLabel: 'Settings',icon: 'pi pi-cog',          route: '/settings',     permission: 'manage-settings' },
 ];
+
+const ADMIN_ROUTES = ADMIN_ITEMS.map(i => i.route);
 
 @Component({
   selector: 'app-sidebar',
@@ -96,6 +104,35 @@ const MENU_ITEMS: MenuItem[] = [
       font-weight: 600;
     }
     .menu-item i { font-size: 1rem; min-width: 1rem; }
+
+    /* Collapsible group header (Administration) */
+    .group-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: calc(100% - 16px);
+      padding: 10px 16px;
+      margin: 1px 8px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: var(--p-text-color);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      transition: background 0.15s;
+    }
+    .group-header:hover { background: var(--p-content-hover-background); }
+    .group-header .group-label { flex: 1; }
+    .group-header .chevron { font-size: 0.75rem; min-width: 0.75rem; transition: transform 0.15s; }
+    .group-header.open .chevron { transform: rotate(90deg); }
+    .group-header.has-active { color: var(--p-primary-color); font-weight: 600; }
+
+    .submenu-item a { padding-left: 38px; }
+    .submenu-item i { font-size: 0.95rem; }
 
     .sidebar-footer {
       padding: 8px;
@@ -265,7 +302,7 @@ const MENU_ITEMS: MenuItem[] = [
         </div>
 
         <ul class="menu-list">
-          @for (item of visibleItems(); track item.route) {
+          @for (item of operationalItems(); track item.route) {
             <li class="menu-item">
               <a [routerLink]="item.route" routerLinkActive="active-link"
                  [pTooltip]="collapsed() ? item.label : ''" tooltipPosition="right">
@@ -273,6 +310,32 @@ const MENU_ITEMS: MenuItem[] = [
                 @if (!collapsed()) { <span>{{ item.label }}</span> }
               </a>
             </li>
+          }
+
+          @if (adminItems().length) {
+            <li class="menu-item">
+              <button type="button" class="group-header"
+                      [class.open]="adminOpen()" [class.has-active]="adminActive()"
+                      (click)="toggleAdmin()"
+                      [pTooltip]="collapsed() ? 'Administration' : ''" tooltipPosition="right">
+                <i class="pi pi-shield"></i>
+                @if (!collapsed()) {
+                  <span class="group-label">Administration</span>
+                  <i class="pi pi-chevron-right chevron"></i>
+                }
+              </button>
+            </li>
+            @if (adminOpen() || collapsed()) {
+              @for (item of adminItems(); track item.route) {
+                <li class="menu-item submenu-item">
+                  <a [routerLink]="item.route" routerLinkActive="active-link"
+                     [pTooltip]="collapsed() ? item.label : ''" tooltipPosition="right">
+                    <i [class]="item.icon"></i>
+                    @if (!collapsed()) { <span>{{ item.label }}</span> }
+                  </a>
+                </li>
+              }
+            }
           }
         </ul>
 
@@ -314,7 +377,7 @@ const MENU_ITEMS: MenuItem[] = [
           </div>
 
           <ul class="drawer-menu">
-            @for (item of visibleItems(); track item.route) {
+            @for (item of operationalItems(); track item.route) {
               <li>
                 <a [routerLink]="item.route" routerLinkActive="active-link"
                    (click)="drawerClose.emit()">
@@ -322,6 +385,29 @@ const MENU_ITEMS: MenuItem[] = [
                   <span>{{ item.label }}</span>
                 </a>
               </li>
+            }
+
+            @if (adminItems().length) {
+              <li>
+                <button type="button" class="group-header"
+                        [class.open]="adminOpen()" [class.has-active]="adminActive()"
+                        (click)="toggleAdmin()">
+                  <i class="pi pi-shield"></i>
+                  <span class="group-label">Administration</span>
+                  <i class="pi pi-chevron-right chevron"></i>
+                </button>
+              </li>
+              @if (adminOpen()) {
+                @for (item of adminItems(); track item.route) {
+                  <li class="submenu-item">
+                    <a [routerLink]="item.route" routerLinkActive="active-link"
+                       (click)="drawerClose.emit()">
+                      <i [class]="item.icon"></i>
+                      <span>{{ item.label }}</span>
+                    </a>
+                  </li>
+                }
+              }
             }
           </ul>
 
@@ -343,11 +429,42 @@ export class SidebarComponent {
   drawerClose = output<void>();
 
   protected readonly responsive = inject(ResponsiveService);
+  private readonly router = inject(Router);
 
-  protected readonly visibleItems = computed(() =>
-    MENU_ITEMS.filter(item => AuthStore.hasPermission(item.permission))
+  // Current URL, tracked reactively so the Administration group can auto-open
+  // and highlight when one of its routes is active.
+  private readonly currentUrl = signal(this.router.url);
+
+  protected readonly operationalItems = computed(() =>
+    OPERATIONAL_ITEMS.filter(item => AuthStore.hasPermission(item.permission))
+  );
+  protected readonly adminItems = computed(() =>
+    ADMIN_ITEMS.filter(item => AuthStore.hasPermission(item.permission))
   );
 
-  // Show max 5 items in bottom nav (most relevant for the role)
-  protected readonly bottomNavItems = computed(() => this.visibleItems().slice(0, 5));
+  // Bottom nav (mobile) is operational-only — admin screens live in the drawer.
+  protected readonly bottomNavItems = computed(() => this.operationalItems().slice(0, 5));
+
+  // Is an Administration route currently active?
+  protected readonly adminActive = computed(() => {
+    const url = this.currentUrl();
+    return ADMIN_ROUTES.some(route => url === route || url.startsWith(route + '/'));
+  });
+
+  protected readonly adminOpen = signal(false);
+
+  constructor() {
+    this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe(e => this.currentUrl.set(e.urlAfterRedirects));
+
+    // Auto-expand the group when navigating into an admin screen.
+    effect(() => {
+      if (this.adminActive()) this.adminOpen.set(true);
+    });
+  }
+
+  protected toggleAdmin(): void {
+    this.adminOpen.update(open => !open);
+  }
 }

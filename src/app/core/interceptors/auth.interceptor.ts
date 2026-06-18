@@ -7,10 +7,14 @@ import { AuthStore } from '../stores/auth.store';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const token = AuthStore.token();
+  const tenantSlug = AuthStore.tenantSlug();
 
-  const authReq = token
-    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
-    : req;
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  // Tenant the SPA is acting under; backend cross-checks it against the token.
+  if (tenantSlug) headers['X-Tenant'] = tenantSlug;
+
+  const authReq = Object.keys(headers).length ? req.clone({ setHeaders: headers }) : req;
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {

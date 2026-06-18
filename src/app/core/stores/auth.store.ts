@@ -13,7 +13,14 @@ export const AuthStore = {
   role: computed(() => _authUser()?.role ?? null),
   bookId: computed(() => _authUser()?.book_id ?? null),
   token: computed(() => _authUser()?.token ?? null),
+  tenantId: computed(() => _authUser()?.tenant_id ?? null),
+  tenantSlug: computed(() => _authUser()?.tenant_slug ?? null),
   permissions: computed(() => _authUser()?.permissions ?? []),
+
+  /** Last workspace slug used, for prefilling the login form (survives logout). */
+  lastTenantSlug(): string | null {
+    return localStorage.getItem('tenant_slug');
+  },
 
   hasPermission(permission: string): boolean {
     return (_authUser()?.permissions ?? []).includes(permission);
@@ -31,6 +38,10 @@ export const AuthStore = {
     _authUser.set(user);
     localStorage.setItem('auth_token', user.token);
     localStorage.setItem('auth_user', JSON.stringify(user));
+    // Remember the workspace so the login form can prefill it next time.
+    if (user.tenant_slug) {
+      localStorage.setItem('tenant_slug', user.tenant_slug);
+    }
   },
 
   loadFromStorage(): void {

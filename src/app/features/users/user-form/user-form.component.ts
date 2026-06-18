@@ -208,18 +208,28 @@ export class UserFormComponent implements OnInit {
   protected readonly isSuperAdmin = computed(() => AuthStore.role() === 'super_admin');
 
   protected readonly roleOptions = computed<{label: string; value: string}[]>(() => {
-    if (AuthStore.role() === 'book_admin') {
+    const role = AuthStore.role();
+    if (role === 'book_admin') {
       return [{ label: 'Field Agent', value: 'field_agent' }];
+    }
+    if (role === 'tenant_admin') {
+      // Tenant admins manage their own books/agents, not the platform.
+      return [
+        { label: 'Book Admin', value: 'book_admin' },
+        { label: 'Field Agent', value: 'field_agent' },
+      ];
     }
     return [
       { label: 'Super Admin', value: 'super_admin' },
+      { label: 'Tenant Admin', value: 'tenant_admin' },
       { label: 'Book Admin', value: 'book_admin' },
       { label: 'Field Agent', value: 'field_agent' },
     ];
   });
 
   protected readonly showBookField = computed(() => {
-    if (AuthStore.role() !== 'super_admin') return false;
+    const current = AuthStore.role();
+    if (current !== 'super_admin' && current !== 'tenant_admin') return false;
     const role = this.selectedRole();
     return role === 'book_admin' || role === 'field_agent';
   });

@@ -8,9 +8,11 @@ import { AuthStore } from './auth.store';
  *
  * - book_admin / field_agent: the effective book is always their own
  *   (`AuthStore.bookId()`) — they never see a picker.
- * - super_admin: has no inherent book, so they pick one from the top-bar
- *   selector. The choice is persisted and shared by every book-scoped screen,
- *   defaulting to the first available book until they choose.
+ * - super_admin / tenant_admin: have no inherent book, so they pick one from the
+ *   top-bar selector. The choice is persisted and shared by every book-scoped
+ *   screen, defaulting to the first available book until they choose.
+ *   (super_admin sees every tenant's books; tenant_admin only their own — the
+ *   API scopes the list.)
  *
  * Screens read `bookId()` instead of deriving the book themselves, and react
  * to changes (e.g. via `effect`) so switching books reloads their data.
@@ -28,20 +30,26 @@ export class BookContextStore {
 
   readonly isSuperAdmin = computed(() => AuthStore.role() === 'super_admin');
 
+  /** Roles with no inherent book that pick one from the top-bar selector. */
+  readonly usesPicker = computed(() => {
+    const role = AuthStore.role();
+    return role === 'super_admin' || role === 'tenant_admin';
+  });
+
   /** The effective book id for the current user (null only before books load). */
   readonly bookId = computed<string | null>(() => {
-    if (!this.isSuperAdmin()) {
+    if (!this.usesPicker()) {
       return AuthStore.bookId();
     }
     return this._selected() ?? this.books()[0]?.id ?? null;
   });
 
-  /** Currently selected id for binding the picker (super_admin). */
+  /** Currently selected id for binding the picker (super_admin / tenant_admin). */
   readonly selectedBookId = computed(() => this.bookId());
 
-  /** Load the book list for the super_admin picker; default to the first book. */
+  /** Load the book list for the picker; default to the first book. */
   loadBooks(): void {
-    if (!this.isSuperAdmin()) {
+    if (!this.usesPicker()) {
       return;
     }
     this.data.books.getAll().subscribe(res => {

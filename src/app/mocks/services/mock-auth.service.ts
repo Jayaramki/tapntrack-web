@@ -2,14 +2,14 @@ import { Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { delay } from 'rxjs/operators';
 import { ApiResponse } from '../../core/models/api-response.model';
-import { AuthUser } from '../../core/models/user.model';
+import { AuthUser, RegisterPayload } from '../../core/models/user.model';
 import { BaseAuthService } from '../../core/services/base-auth.service';
 import { MOCK_USERS } from '../data/users.mock';
 
 @Injectable({ providedIn: 'root' })
 export class MockAuthService extends BaseAuthService {
 
-  login(username: string, password: string): Observable<ApiResponse<AuthUser>> {
+  login(username: string, password: string, _tenantSlug?: string | null): Observable<ApiResponse<AuthUser>> {
     const user = MOCK_USERS.find(u => u.username === username && u.password === password && u.is_active);
     if (!user) {
       return throwError(() => ({ status: 401, error: { message: 'Invalid username or password' } })).pipe(delay(300));
@@ -27,6 +27,24 @@ export class MockAuthService extends BaseAuthService {
       token: `mock-token-${user.username}-${Date.now()}`,
     };
     return of({ success: true, data: authUser, message: 'Login successful' }).pipe(delay(300));
+  }
+
+  register(payload: RegisterPayload): Observable<ApiResponse<AuthUser>> {
+    const authUser: AuthUser = {
+      id: `mock-${payload.slug}`,
+      tenant_id: `mock-tenant-${payload.slug}`,
+      tenant_slug: payload.slug,
+      book_id: null,
+      first_name: payload.username,
+      last_name: '',
+      username: payload.username,
+      role: 'tenant_admin',
+      phone: payload.phone,
+      is_active: true,
+      permissions: ['manage-books', 'manage-users', 'manage-customers', 'manage-settings', 'manage-billing', 'view-dashboard'],
+      token: `mock-token-${payload.username}-${Date.now()}`,
+    };
+    return of({ success: true, data: authUser, message: 'Registration successful' }).pipe(delay(300));
   }
 
   logout(): Observable<ApiResponse<null>> {

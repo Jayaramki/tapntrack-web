@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
-import { AuthUser } from '../models/user.model';
+import { AuthUser, RegisterPayload } from '../models/user.model';
 import { BaseAuthService } from './base-auth.service';
 
 @Injectable({ providedIn: 'root' })
@@ -14,8 +14,16 @@ export class HttpAuthService extends BaseAuthService {
     super();
   }
 
-  login(username: string, password: string): Observable<ApiResponse<AuthUser>> {
-    return this.http.post<ApiResponse<AuthUser>>(`${this.authUrl}/login`, { username, password });
+  login(username: string, password: string, tenantSlug?: string | null): Observable<ApiResponse<AuthUser>> {
+    return this.http.post<ApiResponse<AuthUser>>(`${this.authUrl}/login`, {
+      username,
+      password,
+      ...(tenantSlug ? { tenant_slug: tenantSlug } : {}),
+    });
+  }
+
+  register(payload: RegisterPayload): Observable<ApiResponse<AuthUser>> {
+    return this.http.post<ApiResponse<AuthUser>>(`${this.authUrl}/register`, payload);
   }
 
   logout(): Observable<ApiResponse<null>> {
@@ -26,17 +34,18 @@ export class HttpAuthService extends BaseAuthService {
     return this.http.get<ApiResponse<AuthUser>>(`${this.authUrl}/me`);
   }
 
-  getSecurityQuestion(username: string): Observable<ApiResponse<{ question: string }>> {
+  getSecurityQuestion(username: string, tenantSlug?: string | null): Observable<ApiResponse<{ question: string }>> {
     return this.http.get<ApiResponse<{ question: string }>>(`${this.authUrl}/security-question`, {
-      params: { username },
+      params: { username, ...(tenantSlug ? { tenant_slug: tenantSlug } : {}) },
     });
   }
 
-  forgotPassword(username: string, answer: string, newPassword: string): Observable<ApiResponse<null>> {
+  forgotPassword(username: string, answer: string, newPassword: string, tenantSlug?: string | null): Observable<ApiResponse<null>> {
     return this.http.post<ApiResponse<null>>(`${this.authUrl}/forgot-password`, {
       username,
       answer,
       new_password: newPassword,
+      ...(tenantSlug ? { tenant_slug: tenantSlug } : {}),
     });
   }
 

@@ -20,11 +20,13 @@ import { AuthStore } from '../../../core/stores/auth.store';
 
 const ROLE_LABELS: Record<UserRole, string> = {
   super_admin: 'Super Admin',
+  tenant_admin: 'Tenant Admin',
   book_admin: 'Book Admin',
   field_agent: 'Field Agent',
 };
 const ROLE_SEVERITY: Record<UserRole, string> = {
   super_admin: 'danger',
+  tenant_admin: 'help',
   book_admin: 'warn',
   field_agent: 'info',
 };
