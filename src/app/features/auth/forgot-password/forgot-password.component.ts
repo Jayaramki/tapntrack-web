@@ -8,6 +8,7 @@ import { MessageModule } from 'primeng/message';
 import { CardModule } from 'primeng/card';
 import { StepperModule } from 'primeng/stepper';
 import { DataService } from '../../../core/services/data.service';
+import { currentUrlTenant } from '../../../core/config/tenant';
 
 function passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
   const pw = control.get('newPassword');
@@ -184,6 +185,8 @@ export class ForgotPasswordComponent {
   protected readonly securityQuestion = signal('');
 
   private username = '';
+  // Tenant from the URL (/<slug>/forgot-password), if any.
+  protected readonly urlTenant = currentUrlTenant();
 
   protected readonly step1Form = this.fb.group({
     username: ['', Validators.required],
@@ -210,7 +213,7 @@ export class ForgotPasswordComponent {
     this.loading.set(true);
     this.errorMessage.set(null);
     this.username = this.step1Form.value.username!;
-    this.data.auth.getSecurityQuestion(this.username).subscribe({
+    this.data.auth.getSecurityQuestion(this.username, this.urlTenant).subscribe({
       next: (res) => {
         this.securityQuestion.set(res.data.question);
         this.loading.set(false);
@@ -228,7 +231,7 @@ export class ForgotPasswordComponent {
     this.loading.set(true);
     this.errorMessage.set(null);
     const { answer, newPassword } = this.step2Form.value;
-    this.data.auth.forgotPassword(this.username, answer!, newPassword!).subscribe({
+    this.data.auth.forgotPassword(this.username, answer!, newPassword!, this.urlTenant).subscribe({
       next: () => {
         this.loading.set(false);
         this.step.set(3);

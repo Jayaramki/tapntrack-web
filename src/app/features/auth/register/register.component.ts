@@ -1,5 +1,5 @@
 import { Component, signal, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
@@ -115,7 +115,6 @@ import { RegisterPayload } from '../../../core/models/user.model';
 })
 export class RegisterComponent {
   private readonly fb = inject(FormBuilder);
-  private readonly router = inject(Router);
   private readonly data = inject(DataService);
 
   protected readonly loading = signal(false);
@@ -166,7 +165,10 @@ export class RegisterComponent {
     this.data.auth.register(payload).subscribe({
       next: (res) => {
         AuthStore.setUser(res.data);
-        this.router.navigate([AuthStore.landingRoute()]);
+        // Land on the new workspace URL: /<slug>/dashboard (full reload sets
+        // the router base href from the path).
+        const tenant = res.data.tenant_slug ?? payload.slug;
+        window.location.assign(`/${tenant}${AuthStore.landingRoute()}`);
       },
       error: (err) => {
         this.loading.set(false);

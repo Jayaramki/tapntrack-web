@@ -9,6 +9,7 @@ import { MessageModule } from 'primeng/message';
 import { CardModule } from 'primeng/card';
 import { AuthStore } from '../../../core/stores/auth.store';
 import { DataService } from '../../../core/services/data.service';
+import { currentUrlTenant } from '../../../core/config/tenant';
 import { LOGIN_PRESETS } from '../../../mocks/data/users.mock';
 
 @Component({
@@ -98,14 +99,21 @@ import { LOGIN_PRESETS } from '../../../mocks/data/users.mock';
           }
 
           <form [formGroup]="form" (ngSubmit)="onSubmit()">
-            <div class="field">
-              <label for="workspace">Workspace</label>
-              <input pInputText id="workspace" formControlName="tenantSlug"
-                     placeholder="your-workspace" class="w-full" autocapitalize="off" />
-              <div class="field-error" style="color:var(--p-text-muted-color);">
-                Leave blank if you have a single workspace.
+            @if (urlTenant) {
+              <div class="field">
+                <label>Workspace</label>
+                <div style="font-weight:600; color:var(--p-primary-color);">{{ urlTenant }}</div>
               </div>
-            </div>
+            } @else {
+              <div class="field">
+                <label for="workspace">Workspace</label>
+                <input pInputText id="workspace" formControlName="tenantSlug"
+                       placeholder="your-workspace" class="w-full" autocapitalize="off" />
+                <div class="field-error" style="color:var(--p-text-muted-color);">
+                  Leave blank if you have a single workspace.
+                </div>
+              </div>
+            }
 
             <div class="field">
               <label for="username">Username</label>
@@ -175,8 +183,11 @@ export class LoginComponent {
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly loginPresets = LOGIN_PRESETS;
 
+  // When the URL is /<slug>/login the tenant is fixed by the path.
+  protected readonly urlTenant = currentUrlTenant();
+
   protected readonly form = this.fb.group({
-    tenantSlug: [AuthStore.lastTenantSlug() ?? ''],
+    tenantSlug: [this.urlTenant ?? AuthStore.lastTenantSlug() ?? ''],
     username: ['', Validators.required],
     password: ['', Validators.required],
     rememberMe: [false],
@@ -199,11 +210,20 @@ export class LoginComponent {
     this.loading.set(true);
     this.errorMessage.set(null);
     const { username, password, tenantSlug } = this.form.value;
-    const slug = tenantSlug?.trim().toLowerCase() || null;
+    const slug = this.urlTenant ?? (tenantSlug?.trim().toLowerCase() || null);
     this.data.auth.login(username!, password!, slug).subscribe({
       next: (res) => {
         AuthStore.setUser(res.data);
-        this.router.navigate([AuthStore.landingRoute()]);
+        const landing = AuthStore.landingRoute();
+        const tenant = res.data.tenant_slug;
+        // Move to /<slug>/... so the address bar reflects the workspace (full
+        // reload re-sets the router base href). The platform owner (super_admin)
+        // spans all tenants, so keep them on tenant-agnostic flat URLs.
+        if (tenant && res.data.role !== 'super_admin' && this.urlTenant !== tenant) {
+          window.location.assign(`/${tenant}${landing}`);
+        } else {
+          this.router.navigate([landing]);
+        }
       },
       error: (err) => {
         this.loading.set(false);
