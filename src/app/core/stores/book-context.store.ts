@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Book } from '../models/book.model';
 import { DataService } from '../services/data.service';
 import { AuthStore } from './auth.store';
+import { ImpersonationStore } from './impersonation.store';
 
 /**
  * Global book context.
@@ -30,10 +31,16 @@ export class BookContextStore {
 
   readonly isSuperAdmin = computed(() => AuthStore.role() === 'super_admin');
 
-  /** Roles with no inherent book that pick one from the top-bar selector. */
+  /**
+   * Roles with no inherent book that pick one from the top-bar selector.
+   * tenant_admin always; super_admin (platform) only while impersonating a
+   * tenant — otherwise they have no tenant data to pick from.
+   */
   readonly usesPicker = computed(() => {
     const role = AuthStore.role();
-    return role === 'super_admin' || role === 'tenant_admin';
+    if (role === 'tenant_admin') return true;
+    if (role === 'super_admin') return ImpersonationStore.isActive();
+    return false;
   });
 
   /** The effective book id for the current user (null only before books load). */

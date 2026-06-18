@@ -5,6 +5,8 @@ import { TopbarComponent } from './topbar.component';
 import { ResponsiveService } from '../core/services/responsive.service';
 import { InstallBannerComponent } from '../shared/components/install-banner/install-banner.component';
 import { SwUpdateComponent } from '../shared/components/sw-update/sw-update.component';
+import { ImpersonationStore } from '../core/stores/impersonation.store';
+import { HttpAdminService } from '../core/services/http-admin.service';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 
@@ -38,6 +40,29 @@ import { MessageService } from 'primeng/api';
 
     /* Space so mobile content isn't hidden behind the fixed bottom nav */
     .mobile-spacer { height: 60px; flex-shrink: 0; }
+
+    .impersonation-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      background: #92400e;
+      color: #fff;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .impersonation-bar .grow { flex: 1; }
+    .impersonation-bar .exit-btn {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.4);
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .impersonation-bar .exit-btn:hover { background: rgba(255,255,255,0.3); }
   `],
   template: `
     <div class="shell">
@@ -55,6 +80,13 @@ import { MessageService } from 'primeng/api';
 
       <!-- Main column -->
       <div class="main-col">
+        @if (impersonating()) {
+          <div class="impersonation-bar">
+            <i class="pi pi-eye"></i>
+            <span class="grow">Viewing <strong>{{ impersonatingName() }}</strong> as platform admin — actions are audited.</span>
+            <button class="exit-btn" (click)="exitImpersonation()">Exit</button>
+          </div>
+        }
         <app-topbar (menuToggle)="onMenuToggle()" />
 
         <main class="content-area">
@@ -77,6 +109,18 @@ import { MessageService } from 'primeng/api';
 })
 export class LayoutComponent {
   protected readonly responsive = inject(ResponsiveService);
+  private readonly admin = inject(HttpAdminService);
+
+  protected readonly impersonating = ImpersonationStore.isActive;
+  protected readonly impersonatingName = ImpersonationStore.name;
+
+  protected exitImpersonation(): void {
+    const slug = ImpersonationStore.slug();
+    if (slug) this.admin.stopImpersonate(slug).subscribe({ error: () => {} });
+    ImpersonationStore.stop();
+    // Full reload clears tenant/book state and returns to the console.
+    window.location.assign('/admin/tenants');
+  }
 
   // On tablet/desktop the sidebar is visible by default
   protected readonly showSidebar = signal(true);

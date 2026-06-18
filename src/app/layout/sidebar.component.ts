@@ -28,6 +28,7 @@ const OPERATIONAL_ITEMS: MenuItem[] = [
 
 // Rarely-touched admin/config screens — grouped under one collapsible header.
 const ADMIN_ITEMS: MenuItem[] = [
+  { label: 'Tenants',      shortLabel: 'Tenants', icon: 'pi pi-sitemap',      route: '/admin/tenants',permission: 'manage-tenants' },
   { label: 'Books',        shortLabel: 'Books',   icon: 'pi pi-building',     route: '/books',        permission: 'manage-books' },
   { label: 'Users',        shortLabel: 'Users',   icon: 'pi pi-users',        route: '/users',        permission: 'manage-users' },
   { label: 'Masters',      shortLabel: 'Masters', icon: 'pi pi-database',     route: '/masters',      permission: 'manage-settings' },

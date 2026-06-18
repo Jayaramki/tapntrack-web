@@ -7,6 +7,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { SelectModule } from 'primeng/select';
 import { AuthStore } from '../core/stores/auth.store';
 import { BookContextStore } from '../core/stores/book-context.store';
+import { ImpersonationStore } from '../core/stores/impersonation.store';
 import { DataService } from '../core/services/data.service';
 
 @Component({
@@ -98,6 +99,7 @@ export class TopbarComponent implements OnInit {
     this.data.auth.logout().subscribe(() => {
       AuthStore.clear();
       this.bookCtx.clear();
+      ImpersonationStore.stop();
       this.router.navigate(['/login']);
     });
   }

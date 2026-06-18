@@ -28,6 +28,8 @@ export const AuthStore = {
 
   /** First route the current user is permitted to see (avoids landing on a denied page). */
   landingRoute(): string {
+    // Platform owner lands on the tenants console (they have no tenant data).
+    if (this.hasPermission('manage-tenants')) return '/admin/tenants';
     if (this.hasPermission('view-dashboard')) return '/dashboard';
     if (this.hasPermission('view-loans')) return '/loans';
     if (this.hasPermission('record-collection')) return '/daily-entry';
