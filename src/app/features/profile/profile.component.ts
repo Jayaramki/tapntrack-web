@@ -99,7 +99,7 @@ export class ProfileComponent implements OnInit {
   initials = () => {
     const u = this.user();
     if (!u) return '?';
-    return (u.first_name[0] ?? '') + (u.last_name[0] ?? '');
+    return ((u.first_name?.[0] ?? '') + (u.last_name?.[0] ?? '')) || (u.username?.[0] ?? '?');
   };
 
   roleLabel = () => {

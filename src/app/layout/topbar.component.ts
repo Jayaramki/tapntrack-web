@@ -76,12 +76,16 @@ export class TopbarComponent implements OnInit {
 
   protected readonly userName = computed(() => {
     const u = AuthStore.user();
-    return u ? `${u.first_name} ${u.last_name}` : '';
+    if (!u) return '';
+    const name = `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim();
+    return name || u.username || '';
   });
 
   protected readonly avatarLabel = computed(() => {
     const u = AuthStore.user();
-    return u ? `${u.first_name[0]}${u.last_name[0]}`.toUpperCase() : '?';
+    if (!u) return '?';
+    const initials = `${u.first_name?.[0] ?? ''}${u.last_name?.[0] ?? ''}`.trim();
+    return (initials || u.username?.[0] || '?').toUpperCase();
   });
 
   protected readonly appTitle = computed(() => 'TapNTrack');
