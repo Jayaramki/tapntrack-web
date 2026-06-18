@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, signal, inject } from '@angular/core';
+﻿import { Component, effect, signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CurrencyPipe, TitleCasePipe } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
@@ -157,7 +157,7 @@ import { forkJoin } from 'rxjs';
     </div>
   `,
 })
-export class ReportsComponent implements OnInit {
+export class ReportsComponent {
   private data = inject(DataService);
   private msg  = inject(MessageService);
   private bookCtx = inject(BookContextStore);
@@ -178,14 +178,19 @@ export class ReportsComponent implements OnInit {
   ];
   readonly lines = signal<Line[]>([]);
 
-  ngOnInit() {
-    // Default: current month
+  constructor() {
+    // Default date range: current month (once).
     const now = new Date();
     this.filterFrom = new Date(now.getFullYear(), now.getMonth(), 1);
     this.filterTo   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
-    this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
-    this.generate();
+
+    // Reload lines + report whenever the active book changes (header picker).
+    effect(() => {
+      const bookId = this.bookCtx.bookId();
+      if (!bookId) return;
+      this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
+      this.generate();
+    });
   }
 
   generate() {

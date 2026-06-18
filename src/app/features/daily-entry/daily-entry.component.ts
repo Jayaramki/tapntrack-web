@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit, computed, OnDestroy } from '@angular/core';
+import { Component, signal, inject, effect, OnInit, computed, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { forkJoin, Observable, of } from 'rxjs';
@@ -432,10 +432,20 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
       .reduce((count, r) => count + dates.filter(d => !r.coveredDates.includes(d)).length, 0);
   });
 
+  constructor() {
+    // Active book changed (header picker): reload its lines and reset the grid
+    // so stale rows/line from the previous book don't linger.
+    effect(() => {
+      const bookId = this.bookCtx.bookId();
+      if (!bookId) return;
+      this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
+      this.selectedLine = '';
+      this.rows.set([]);
+    });
+  }
+
   ngOnInit(): void {
     window.addEventListener('resize', this.resizeListener);
-    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
-    this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
   }
   ngOnDestroy(): void { window.removeEventListener('resize', this.resizeListener); }
 

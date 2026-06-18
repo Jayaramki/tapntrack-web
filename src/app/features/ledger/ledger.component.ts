@@ -1,4 +1,4 @@
-﻿import { Component, signal, inject, OnInit, computed } from '@angular/core';
+﻿import { Component, signal, inject, effect, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
@@ -125,7 +125,7 @@ const MONTH_NAMES = ['January','February','March','April','May','June',
     }
   `,
 })
-export class LedgerComponent implements OnInit {
+export class LedgerComponent {
   private readonly data = inject(DataService);
   private readonly bookCtx = inject(BookContextStore);
   private readonly toastSvc = inject(MessageService);
@@ -166,7 +166,12 @@ export class LedgerComponent implements OnInit {
     ...this.lines().map(l => ({ label: l.name, value: l.name })),
   ]);
 
-  ngOnInit(): void { this.loadLedger(); }
+  constructor() {
+    // Reload whenever the active book changes (header picker) or on init.
+    effect(() => {
+      if (this.bookCtx.bookId()) this.loadLedger();
+    });
+  }
 
   protected onGridReady(event: GridReadyEvent): void {
     this.gridApi = event.api;

@@ -1,4 +1,4 @@
-﻿import { Component, signal, inject, OnInit, computed } from '@angular/core';
+﻿import { Component, signal, inject, effect, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -192,7 +192,7 @@ import { Line } from '../../core/models/line.model';
     }
   `,
 })
-export class DaySummaryComponent implements OnInit {
+export class DaySummaryComponent {
   private readonly data = inject(DataService);
   private readonly bookCtx = inject(BookContextStore);
 
@@ -232,7 +232,12 @@ export class DaySummaryComponent implements OnInit {
     this.filteredEntries().filter(e => e.mode === 'gpay').reduce((s, e) => s + e.amount, 0)
   );
 
-  ngOnInit(): void { this.loadSummary(); }
+  constructor() {
+    // Reload whenever the active book changes (header picker) or on init.
+    effect(() => {
+      if (this.bookCtx.bookId()) this.loadSummary();
+    });
+  }
 
   protected loadSummary(): void {
     this.loading.set(true);

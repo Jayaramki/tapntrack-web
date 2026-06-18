@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, effect, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DatePipe, CurrencyPipe } from '@angular/common';
@@ -165,7 +165,7 @@ import { forkJoin } from 'rxjs';
     }
   `,
 })
-export class ExpenseListComponent implements OnInit {
+export class ExpenseListComponent {
   protected readonly router    = inject(Router);
   private  readonly data       = inject(DataService);
   private readonly bookCtx = inject(BookContextStore);
@@ -208,7 +208,12 @@ export class ExpenseListComponent implements OnInit {
     return this.selectedCategory !== 'all' || this.selectedStatus !== 'all' || !!this.dateRange?.[0];
   }
 
-  ngOnInit(): void { this.load(); }
+  constructor() {
+    // Reload whenever the active book changes (header picker) or on init.
+    effect(() => {
+      if (this.bookCtx.bookId()) this.load();
+    });
+  }
 
   private load(): void {
     this.loading.set(true);
