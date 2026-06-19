@@ -2,6 +2,7 @@ import { Component, signal, inject, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { DataService } from '../../core/services/data.service';
@@ -11,7 +12,7 @@ import { SettingKey } from '../../core/models/app-setting.model';
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [FormsModule, ButtonModule, InputTextModule, ToastModule],
+  imports: [FormsModule, ButtonModule, InputTextModule, SelectModule, ToastModule],
   providers: [MessageService],
   styles: [`
     :host { display:block; padding:16px; }
@@ -51,6 +52,48 @@ import { SettingKey } from '../../core/models/app-setting.model';
         }
       </div>
     </div>
+
+    <div class="section">
+      <div class="sec-header">🔢 Loan Numbering</div>
+      <div class="sec-body">
+        <div class="setting-row">
+          <div class="setting-label">Numbering</div>
+          <div class="setting-value">
+            <p-select [options]="modeOptions" optionLabel="label" optionValue="value"
+                      [(ngModel)]="settingValues['LOAN_NUMBER_MODE']" appendTo="body" styleClass="w-full" />
+          </div>
+          <div class="save-btn">
+            <p-button size="small" label="Save" icon="pi pi-check"
+                      [loading]="savingKey() === 'LOAN_NUMBER_MODE'" (onClick)="saveSetting('LOAN_NUMBER_MODE')" />
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Reset sequence</div>
+          <div class="setting-value">
+            <p-select [options]="resetOptions" optionLabel="label" optionValue="value"
+                      [(ngModel)]="settingValues['LOAN_NUMBER_RESET']" appendTo="body" styleClass="w-full" />
+          </div>
+          <div class="save-btn">
+            <p-button size="small" label="Save" icon="pi pi-check"
+                      [loading]="savingKey() === 'LOAN_NUMBER_RESET'" (onClick)="saveSetting('LOAN_NUMBER_RESET')" />
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Prefix</div>
+          <div class="setting-value">
+            <input pInputText [(ngModel)]="settingValues['LOAN_NUMBER_PREFIX']" placeholder="e.g. BF-" />
+          </div>
+          <div class="save-btn">
+            <p-button size="small" label="Save" icon="pi pi-check"
+                      [loading]="savingKey() === 'LOAN_NUMBER_PREFIX'" (onClick)="saveSetting('LOAN_NUMBER_PREFIX')" />
+          </div>
+        </div>
+        <div style="font-size:0.78rem; color:var(--p-text-muted-color); margin-top:10px;">
+          Auto-generate fills the loan number when adding a loan (still editable).
+          Example next number: <strong>{{ preview() }}</strong>
+        </div>
+      </div>
+    </div>
   `,
 })
 export class SettingsComponent {
@@ -67,6 +110,23 @@ export class SettingsComponent {
     { key: 'DAYS_TO_PAY',         label: 'Default Days to Pay', placeholder: 'e.g. 100' },
   ];
 
+  readonly modeOptions = [
+    { label: 'Manual entry', value: 'manual' },
+    { label: 'Auto-generate', value: 'auto' },
+  ];
+  readonly resetOptions = [
+    { label: 'Yearly (restart at 1 each January)', value: 'yearly' },
+    { label: 'Never (keep counting)', value: 'never' },
+  ];
+
+  /** Live example of the next number for the current prefix/reset choice. */
+  preview(): string {
+    const prefix = this.settingValues['LOAN_NUMBER_PREFIX'] ?? '';
+    const yearly = (this.settingValues['LOAN_NUMBER_RESET'] ?? 'yearly') === 'yearly';
+    const yy = String(new Date().getFullYear()).slice(-2);
+    return `${prefix}${yearly ? yy + '-' : ''}001`;
+  }
+
   constructor() {
     effect(() => {
       const bookId = this.bookCtx.bookId();
@@ -81,7 +141,7 @@ export class SettingsComponent {
   saveSetting(key: SettingKey) {
     const bookId = this.bookCtx.bookId();
     const value  = this.settingValues[key] ?? '';
-    if (!bookId || !value.trim()) return;
+    if (!bookId) return;  // empty value allowed (e.g. blank prefix)
     this.savingKey.set(key);
     this.data.settings.update(bookId, { key, value }).subscribe({
       next: () => {

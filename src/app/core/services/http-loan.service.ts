@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
 import { Loan, ArchiveLoan, CreateLoanRequest, UpdateLoanRequest, PendingLoan } from '../models/loan.model';
-import { BaseLoanService } from './base-loan.service';
+import { BaseLoanService, LoanNumberSuggestion } from './base-loan.service';
 
 @Injectable({ providedIn: 'root' })
 export class HttpLoanService extends BaseLoanService {
@@ -16,6 +16,12 @@ export class HttpLoanService extends BaseLoanService {
 
   getAll(book_id: string): Observable<ApiResponse<Loan[]>> {
     return this.http.get<ApiResponse<Loan[]>>(this.url, { params: { book_id } });
+  }
+
+  getNextNumber(book_id: string, date?: string): Observable<ApiResponse<LoanNumberSuggestion>> {
+    return this.http.get<ApiResponse<LoanNumberSuggestion>>(`${this.url}/next-number`, {
+      params: { book_id, ...(date ? { date } : {}) },
+    });
   }
 
   getDeleted(book_id: string): Observable<ApiResponse<Loan[]>> {

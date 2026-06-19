@@ -1,4 +1,10 @@
-export type SettingKey = 'APP_NAME' | 'INTEREST_PERCENTAGE' | 'DAYS_TO_PAY';
+export type SettingKey =
+  | 'APP_NAME'
+  | 'INTEREST_PERCENTAGE'
+  | 'DAYS_TO_PAY'
+  | 'LOAN_NUMBER_MODE'
+  | 'LOAN_NUMBER_RESET'
+  | 'LOAN_NUMBER_PREFIX';
 
 export interface AppSetting {
   id: string;

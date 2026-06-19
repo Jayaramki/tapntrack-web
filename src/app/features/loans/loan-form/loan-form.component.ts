@@ -287,7 +287,40 @@ export class LoanFormComponent implements OnInit {
         },
         error: () => this.loadError.set('Loan not found.'),
       });
+    } else {
+      // New loan: default the issue date to today and, if the book uses
+      // auto-numbering, prefill the (still editable) loan number.
+      const today = new Date();
+      this.form.patchValue({ issued_date: today });
+      if (bookId) this.applyAutoNumber(bookId, today);
+
+      // Re-number when the issue year changes (auto mode only).
+      this.form.get('issued_date')!.valueChanges
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((d: Date | null) => {
+          if (this.autoNumber && d && bookId && d.getFullYear() !== this.lastNumberedYear) {
+            this.applyAutoNumber(bookId, d);
+          }
+        });
     }
+  }
+
+  private autoNumber = false;
+  private lastNumberedYear: number | null = null;
+
+  /** Fetch + prefill the suggested loan number for a book/issue-date (auto mode). */
+  private applyAutoNumber(bookId: string, date: Date): void {
+    const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    this.data.loans.getNextNumber(bookId, iso).subscribe({
+      next: (res) => {
+        this.autoNumber = res.data.mode === 'auto';
+        this.lastNumberedYear = date.getFullYear();
+        if (this.autoNumber) {
+          this.form.patchValue({ loan_number: res.data.next_number });
+        }
+      },
+      error: () => {},
+    });
   }
 
   private loadCustomers(bookId: string): void {

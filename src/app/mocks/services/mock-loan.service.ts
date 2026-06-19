@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 import { delay } from 'rxjs/operators';
 import { ApiResponse } from '../../core/models/api-response.model';
 import { Loan, ArchiveLoan, CreateLoanRequest, UpdateLoanRequest, PendingLoan } from '../../core/models/loan.model';
-import { BaseLoanService } from '../../core/services/base-loan.service';
+import { BaseLoanService, LoanNumberSuggestion } from '../../core/services/base-loan.service';
 import { MOCK_LOANS, MOCK_ARCHIVE_LOANS } from '../data/loans.mock';
 import { MOCK_CUSTOMERS } from '../data/customers.mock';
 import { MOCK_DAILY_ENTRIES } from '../data/daily-entries.mock';
@@ -43,6 +43,10 @@ function isOverdue(loan: Loan, pendingDays: number): boolean {
 export class MockLoanService extends BaseLoanService {
   private loans: Loan[] = [...MOCK_LOANS];
   private archiveLoans: ArchiveLoan[] = [...MOCK_ARCHIVE_LOANS];
+
+  getNextNumber(_book_id: string, _date?: string): Observable<ApiResponse<LoanNumberSuggestion>> {
+    return of({ success: true, data: { mode: 'manual' as const, reset: 'never' as const, prefix: '', next_number: '' } }).pipe(delay(100));
+  }
 
   getAll(book_id: string): Observable<ApiResponse<Loan[]>> {
     const active = this.loans
