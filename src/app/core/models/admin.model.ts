@@ -1,5 +1,14 @@
 export type TenantStatus = 'trial' | 'active' | 'past_due' | 'suspended';
 
+export interface AdminPlan {
+  code: string;
+  label: string;
+  max_active_loans: number | null;
+  max_users: number | null;
+  max_books: number | null;
+  sort_order: number;
+}
+
 export interface AdminTenant {
   id: string;
   name: string;

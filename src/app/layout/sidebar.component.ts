@@ -41,6 +41,7 @@ const ADMIN_ITEMS: MenuItem[] = [
 // impersonating (when impersonating, they see the tenant menu instead).
 const PLATFORM_ITEMS: MenuItem[] = [
   { label: 'Tenants',      shortLabel: 'Tenants', icon: 'pi pi-sitemap',      route: '/admin/tenants',permission: 'manage-tenants' },
+  { label: 'Plans',        shortLabel: 'Plans',   icon: 'pi pi-tags',         route: '/admin/plans',  permission: 'manage-tenants' },
 ];
 
 const ADMIN_ROUTES = ADMIN_ITEMS.map(i => i.route);

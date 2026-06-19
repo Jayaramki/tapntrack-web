@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
-import { AdminTenant, TenantStatus } from '../models/admin.model';
+import { AdminTenant, AdminPlan, TenantStatus } from '../models/admin.model';
 
 /**
  * Platform-admin (super_admin) API. Surfaces tenant metadata only; borrower data
@@ -32,5 +32,13 @@ export class HttpAdminService {
 
   stopImpersonate(slug: string): Observable<ApiResponse<null>> {
     return this.http.post<ApiResponse<null>>(`${this.url}/stop-impersonate`, { slug });
+  }
+
+  getPlans(): Observable<ApiResponse<AdminPlan[]>> {
+    return this.http.get<ApiResponse<AdminPlan[]>>(`${this.url}/plans`);
+  }
+
+  savePlanLimits(code: string, data: Partial<AdminPlan>): Observable<ApiResponse<AdminPlan>> {
+    return this.http.patch<ApiResponse<AdminPlan>>(`${this.url}/plans/${code}`, data);
   }
 }

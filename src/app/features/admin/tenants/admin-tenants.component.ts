@@ -66,7 +66,7 @@ const STATUS_SEVERITY: Record<TenantStatus, 'success' | 'info' | 'warn' | 'dange
           <td><code>{{ t.slug }}</code></td>
           <td><p-tag [value]="t.status" [severity]="statusSeverity(t.status)" /></td>
           <td>
-            <p-select [options]="planOptions" optionLabel="label" optionValue="value"
+            <p-select [options]="planOptions()" optionLabel="label" optionValue="value"
                       [ngModel]="t.plan" (ngModelChange)="changePlan(t, $event)"
                       appendTo="body" styleClass="w-full" />
           </td>
@@ -101,18 +101,17 @@ export class AdminTenantsComponent implements OnInit {
   protected readonly tenants = signal<AdminTenant[]>([]);
   protected readonly loading = signal(true);
 
-  protected readonly planOptions = [
-    { label: 'Free Trial', value: 'trial' },
-    { label: 'Basic', value: 'basic' },
-    { label: 'Standard', value: 'standard' },
-    { label: 'Premium', value: 'premium' },
-    { label: 'Enterprise', value: 'enterprise' },
-  ];
+  // Loaded from the plans API so labels stay in sync with the Plans editor.
+  protected readonly planOptions = signal<{ label: string; value: string }[]>([]);
 
   ngOnInit(): void {
     this.admin.getTenants().subscribe({
       next: (res) => { this.tenants.set(res.data); this.loading.set(false); },
       error: () => this.loading.set(false),
+    });
+    this.admin.getPlans().subscribe({
+      next: (res) => this.planOptions.set(res.data.map(p => ({ label: p.label, value: p.code }))),
+      error: () => {},
     });
   }
 
