@@ -4,6 +4,7 @@ import { filter } from 'rxjs';
 import { TooltipModule } from 'primeng/tooltip';
 import { AuthStore } from '../core/stores/auth.store';
 import { ImpersonationStore } from '../core/stores/impersonation.store';
+import { BrandStore } from '../core/stores/brand.store';
 import { ResponsiveService } from '../core/services/responsive.service';
 
 interface MenuItem {
@@ -306,7 +307,7 @@ const ADMIN_ROUTES = ADMIN_ITEMS.map(i => i.route);
       <aside class="sidebar" [class.collapsed]="collapsed()">
         <div class="sidebar-brand">
           <i class="pi pi-bolt brand-icon"></i>
-          @if (!collapsed()) { <span>TapNTrack</span> }
+          @if (!collapsed()) { <span>{{ brandName() }}</span> }
         </div>
 
         <ul class="menu-list">
@@ -387,7 +388,7 @@ const ADMIN_ROUTES = ADMIN_ITEMS.map(i => i.route);
           <div class="drawer-header">
             <div class="drawer-brand">
               <i class="pi pi-bolt brand-icon"></i>
-              <span>TapNTrack</span>
+              <span>{{ brandName() }}</span>
             </div>
             <button class="drawer-close" (click)="drawerClose.emit()">
               <i class="pi pi-times"></i>
@@ -457,6 +458,7 @@ export class SidebarComponent {
   drawerClose = output<void>();
 
   protected readonly responsive = inject(ResponsiveService);
+  protected readonly brandName = inject(BrandStore).name;
   private readonly router = inject(Router);
 
   // Current URL, tracked reactively so the Administration group can auto-open

@@ -90,8 +90,11 @@ export const MOCK_USERS: MockUser[] = [
   },
 ];
 
+// Seeded demo users — all password Admin@123, tenant "balaji" (except the
+// platform owner). The slug prefills the Workspace field on the flat login page.
 export const LOGIN_PRESETS = [
-  { username: 'superadmin', password: 'Admin@123', hint: 'SuperAdmin (all books)' },
-  { username: 'bookadmin', password: 'password', hint: 'BookAdmin — Chennai Branch' },
-  { username: 'agent', password: 'password', hint: 'FieldAgent — Chennai Branch' },
+  { username: 'superadmin',  password: 'Admin@123', slug: '',       hint: 'Super Admin — platform' },
+  { username: 'tenantadmin', password: 'Admin@123', slug: 'balaji', hint: 'Tenant Admin — Balaji' },
+  { username: 'bookadmin',   password: 'Admin@123', slug: 'balaji', hint: 'Book Admin — Balaji' },
+  { username: 'agent',       password: 'Admin@123', slug: 'balaji', hint: 'Field Agent — Balaji' },
 ];

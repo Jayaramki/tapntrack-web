@@ -1,4 +1,4 @@
-import { Component, computed, output, inject, OnInit } from '@angular/core';
+import { Component, computed, effect, output, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -9,6 +9,7 @@ import { AuthStore } from '../core/stores/auth.store';
 import { BookContextStore } from '../core/stores/book-context.store';
 import { ImpersonationStore } from '../core/stores/impersonation.store';
 import { SubscriptionStore } from '../core/stores/subscription.store';
+import { BrandStore } from '../core/stores/brand.store';
 import { DataService } from '../core/services/data.service';
 
 @Component({
@@ -72,6 +73,12 @@ export class TopbarComponent implements OnInit {
   private readonly data = inject(DataService);
   protected readonly bookCtx = inject(BookContextStore);
   private readonly subscription = inject(SubscriptionStore);
+  private readonly brand = inject(BrandStore);
+
+  constructor() {
+    // Re-derive the workspace brand (book APP_NAME) when the active book changes.
+    effect(() => this.brand.loadForBook(this.bookCtx.bookId()));
+  }
 
   ngOnInit(): void {
     this.bookCtx.loadBooks();
@@ -91,7 +98,7 @@ export class TopbarComponent implements OnInit {
     return (initials || u.username?.[0] || '?').toUpperCase();
   });
 
-  protected readonly appTitle = computed(() => 'TapNTrack');
+  protected readonly appTitle = this.brand.name;
 
   goToProfile(): void {
     this.router.navigate(['/profile']);

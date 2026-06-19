@@ -198,8 +198,12 @@ export class LoginComponent {
     return !!(c?.invalid && c?.touched);
   }
 
-  protected fillPreset(preset: { username: string; password: string }): void {
-    this.form.patchValue({ username: preset.username, password: preset.password });
+  protected fillPreset(preset: { username: string; password: string; slug?: string }): void {
+    this.form.patchValue({
+      username: preset.username,
+      password: preset.password,
+      tenantSlug: this.urlTenant ?? preset.slug ?? '',
+    });
   }
 
   protected onSubmit(): void {
