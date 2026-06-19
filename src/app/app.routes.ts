@@ -55,6 +55,7 @@ export const routes: Routes = [
       { path: 'reports', loadComponent: () => import('./features/reports/reports.component').then(m => m.ReportsComponent), canActivate: [permissionGuard], data: { permission: 'view-reports' } },
       { path: 'masters', loadComponent: () => import('./features/masters/masters.component').then(m => m.MastersComponent), canActivate: [permissionGuard], data: { permission: 'manage-settings' } },
       { path: 'settings', loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent), canActivate: [permissionGuard], data: { permission: 'manage-settings' } },
+      { path: 'billing', loadComponent: () => import('./features/billing/billing.component').then(m => m.BillingComponent), canActivate: [permissionGuard], data: { permission: 'manage-billing' } },
       { path: 'admin/tenants', loadComponent: () => import('./features/admin/tenants/admin-tenants.component').then(m => m.AdminTenantsComponent), canActivate: [permissionGuard], data: { permission: 'manage-tenants' } },
       { path: 'profile', loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent), canActivate: [authGuard] },
     ],

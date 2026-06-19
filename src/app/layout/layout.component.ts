@@ -6,6 +6,8 @@ import { ResponsiveService } from '../core/services/responsive.service';
 import { InstallBannerComponent } from '../shared/components/install-banner/install-banner.component';
 import { SwUpdateComponent } from '../shared/components/sw-update/sw-update.component';
 import { ImpersonationStore } from '../core/stores/impersonation.store';
+import { SubscriptionStore } from '../core/stores/subscription.store';
+import { AuthStore } from '../core/stores/auth.store';
 import { HttpAdminService } from '../core/services/http-admin.service';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
@@ -63,6 +65,17 @@ import { MessageService } from 'primeng/api';
       font-weight: 600;
     }
     .impersonation-bar .exit-btn:hover { background: rgba(255,255,255,0.3); }
+
+    .readonly-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      background: #b91c1c;
+      color: #fff;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
   `],
   template: `
     <div class="shell">
@@ -85,6 +98,12 @@ import { MessageService } from 'primeng/api';
             <i class="pi pi-eye"></i>
             <span class="grow">Viewing <strong>{{ impersonatingName() }}</strong> as platform admin — actions are audited.</span>
             <button class="exit-btn" (click)="exitImpersonation()">Exit</button>
+          </div>
+        }
+        @if (readOnly()) {
+          <div class="readonly-bar">
+            <i class="pi pi-lock"></i>
+            <span>This workspace is <strong>read-only</strong> — the subscription is {{ subStatus() }}. Renew to make changes; your data is safe.</span>
           </div>
         }
         <app-topbar (menuToggle)="onMenuToggle()" />
@@ -110,9 +129,20 @@ import { MessageService } from 'primeng/api';
 export class LayoutComponent {
   protected readonly responsive = inject(ResponsiveService);
   private readonly admin = inject(HttpAdminService);
+  private readonly subscription = inject(SubscriptionStore);
 
   protected readonly impersonating = ImpersonationStore.isActive;
   protected readonly impersonatingName = ImpersonationStore.name;
+  protected readonly readOnly = this.subscription.isReadOnly;
+  protected readonly subStatus = () => this.subscription.subscription()?.status?.replace('_', ' ') ?? '';
+
+  constructor() {
+    // Load the subscription when a tenant context exists (a workspace user, or a
+    // platform admin while impersonating). Drives the read-only banner.
+    if (AuthStore.role() !== 'super_admin' || ImpersonationStore.isActive()) {
+      this.subscription.load();
+    }
+  }
 
   protected exitImpersonation(): void {
     const slug = ImpersonationStore.slug();

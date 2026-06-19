@@ -22,6 +22,10 @@ export class HttpAdminService {
     return this.http.patch<ApiResponse<AdminTenant>>(`${this.url}/tenants/${id}/status`, { status });
   }
 
+  updatePlan(id: string, plan: string): Observable<ApiResponse<AdminTenant>> {
+    return this.http.patch<ApiResponse<AdminTenant>>(`${this.url}/tenants/${id}/plan`, { plan });
+  }
+
   impersonate(id: string): Observable<ApiResponse<{ slug: string; name: string }>> {
     return this.http.post<ApiResponse<{ slug: string; name: string }>>(`${this.url}/tenants/${id}/impersonate`, {});
   }

@@ -1,10 +1,12 @@
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
+import { SelectModule } from 'primeng/select';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { HttpAdminService } from '../../../core/services/http-admin.service';
@@ -19,7 +21,8 @@ const STATUS_SEVERITY: Record<TenantStatus, 'success' | 'info' | 'warn' | 'dange
   selector: 'app-admin-tenants',
   standalone: true,
   imports: [
-    DatePipe, TableModule, ButtonModule, TagModule, ToastModule, TooltipModule, ConfirmDialogModule,
+    DatePipe, FormsModule, TableModule, ButtonModule, TagModule, ToastModule, TooltipModule,
+    SelectModule, ConfirmDialogModule,
   ],
   providers: [ConfirmationService, MessageService],
   styles: [`
@@ -46,6 +49,7 @@ const STATUS_SEVERITY: Record<TenantStatus, 'success' | 'info' | 'warn' | 'dange
           <th>Workspace</th>
           <th>Handle</th>
           <th>Status</th>
+          <th style="width:150px">Plan</th>
           <th class="num">Books</th>
           <th class="num">Users</th>
           <th class="num">Active loans</th>
@@ -61,6 +65,11 @@ const STATUS_SEVERITY: Record<TenantStatus, 'success' | 'info' | 'warn' | 'dange
           </td>
           <td><code>{{ t.slug }}</code></td>
           <td><p-tag [value]="t.status" [severity]="statusSeverity(t.status)" /></td>
+          <td>
+            <p-select [options]="planOptions" optionLabel="label" optionValue="value"
+                      [ngModel]="t.plan" (ngModelChange)="changePlan(t, $event)"
+                      appendTo="body" styleClass="w-full" />
+          </td>
           <td class="num">{{ t.books_count }}</td>
           <td class="num">{{ t.users_count }}</td>
           <td class="num">{{ t.active_loans_count }}</td>
@@ -79,7 +88,7 @@ const STATUS_SEVERITY: Record<TenantStatus, 'success' | 'info' | 'warn' | 'dange
         </tr>
       </ng-template>
       <ng-template #empty>
-        <tr><td colspan="8" class="text-center p-6" style="color:var(--p-text-muted-color)">No tenants yet.</td></tr>
+        <tr><td colspan="9" class="text-center p-6" style="color:var(--p-text-muted-color)">No tenants yet.</td></tr>
       </ng-template>
     </p-table>
   `,
@@ -92,6 +101,14 @@ export class AdminTenantsComponent implements OnInit {
   protected readonly tenants = signal<AdminTenant[]>([]);
   protected readonly loading = signal(true);
 
+  protected readonly planOptions = [
+    { label: 'Free Trial', value: 'trial' },
+    { label: 'Basic', value: 'basic' },
+    { label: 'Standard', value: 'standard' },
+    { label: 'Premium', value: 'premium' },
+    { label: 'Enterprise', value: 'enterprise' },
+  ];
+
   ngOnInit(): void {
     this.admin.getTenants().subscribe({
       next: (res) => { this.tenants.set(res.data); this.loading.set(false); },
@@ -100,6 +117,17 @@ export class AdminTenantsComponent implements OnInit {
   }
 
   protected statusSeverity(s: TenantStatus) { return STATUS_SEVERITY[s] ?? 'info'; }
+
+  protected changePlan(t: AdminTenant, plan: string): void {
+    if (plan === t.plan) return;
+    this.admin.updatePlan(t.id, plan).subscribe({
+      next: (res) => {
+        this.tenants.update(list => list.map(x => x.id === t.id ? res.data : x));
+        this.toastSvc.add({ severity: 'success', summary: 'Plan updated', detail: `${t.name} → ${res.data.plan_label ?? plan}`, life: 2500 });
+      },
+      error: () => this.toastSvc.add({ severity: 'error', summary: 'Update failed', detail: t.name, life: 3000 }),
+    });
+  }
 
   protected actAs(t: AdminTenant): void {
     this.admin.impersonate(t.id).subscribe({

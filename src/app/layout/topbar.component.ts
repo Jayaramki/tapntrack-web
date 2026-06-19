@@ -8,6 +8,7 @@ import { SelectModule } from 'primeng/select';
 import { AuthStore } from '../core/stores/auth.store';
 import { BookContextStore } from '../core/stores/book-context.store';
 import { ImpersonationStore } from '../core/stores/impersonation.store';
+import { SubscriptionStore } from '../core/stores/subscription.store';
 import { DataService } from '../core/services/data.service';
 
 @Component({
@@ -70,6 +71,7 @@ export class TopbarComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly data = inject(DataService);
   protected readonly bookCtx = inject(BookContextStore);
+  private readonly subscription = inject(SubscriptionStore);
 
   ngOnInit(): void {
     this.bookCtx.loadBooks();
@@ -100,6 +102,7 @@ export class TopbarComponent implements OnInit {
       AuthStore.clear();
       this.bookCtx.clear();
       ImpersonationStore.stop();
+      this.subscription.clear();
       this.router.navigate(['/login']);
     });
   }

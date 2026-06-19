@@ -8,6 +8,8 @@ export interface AdminTenant {
   email?: string | null;
   phone?: string | null;
   status: TenantStatus;
+  plan: string;
+  plan_label?: string;
   trial_ends_at?: string | null;
   created_at: string;
   books_count: number;

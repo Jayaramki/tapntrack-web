@@ -33,6 +33,7 @@ const ADMIN_ITEMS: MenuItem[] = [
   { label: 'Users',        shortLabel: 'Users',   icon: 'pi pi-users',        route: '/users',        permission: 'manage-users' },
   { label: 'Masters',      shortLabel: 'Masters', icon: 'pi pi-database',     route: '/masters',      permission: 'manage-settings' },
   { label: 'Settings',     shortLabel: 'Settings',icon: 'pi pi-cog',          route: '/settings',     permission: 'manage-settings' },
+  { label: 'Plan & Usage', shortLabel: 'Plan',    icon: 'pi pi-chart-pie',    route: '/billing',      permission: 'manage-billing' },
 ];
 
 // Platform-operator screens — shown only to a super_admin who is NOT
