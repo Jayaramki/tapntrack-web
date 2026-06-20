@@ -13,6 +13,7 @@ interface MenuItem {
   icon: string;
   route: string;
   permission: string;
+  hideForFieldAgent?: boolean;
 }
 
 // Daily-use screens — kept flat (one tap) for quick access.
@@ -21,7 +22,8 @@ const OPERATIONAL_ITEMS: MenuItem[] = [
   { label: 'Customers',    shortLabel: 'Customers',icon: 'pi pi-user',         route: '/customers',    permission: 'manage-customers' },
   { label: 'Loans',        shortLabel: 'Loans',   icon: 'pi pi-credit-card',  route: '/loans',        permission: 'view-loans' },
   { label: 'Pending',      shortLabel: 'Pending', icon: 'pi pi-clock',        route: '/pending-loans',permission: 'view-pending-loans' },
-  { label: 'Daily Entry',  shortLabel: 'Entry',   icon: 'pi pi-plus-circle',  route: '/daily-entry',  permission: 'record-collection' },
+  { label: 'Collect',      shortLabel: 'Collect', icon: 'pi pi-mobile',       route: '/collect',      permission: 'record-collection' },
+  { label: 'Daily Entry',  shortLabel: 'Entry',   icon: 'pi pi-plus-circle',  route: '/daily-entry',  permission: 'record-collection', hideForFieldAgent: true },
   { label: 'Day Summary',  shortLabel: 'Summary', icon: 'pi pi-chart-bar',    route: '/day-summary',  permission: 'view-day-summary' },
   { label: 'Ledger',       shortLabel: 'Ledger',  icon: 'pi pi-table',        route: '/ledger',       permission: 'view-ledger' },
   { label: 'Expenses',     shortLabel: 'Expense', icon: 'pi pi-wallet',       route: '/expenses',     permission: 'manage-expenses' },
@@ -477,11 +479,13 @@ export class SidebarComponent {
       ? PLATFORM_ITEMS.filter(item => AuthStore.hasPermission(item.permission))
       : []
   );
-  protected readonly operationalItems = computed(() =>
-    this.platformContext()
-      ? []
-      : OPERATIONAL_ITEMS.filter(item => AuthStore.hasPermission(item.permission))
-  );
+  protected readonly operationalItems = computed(() => {
+    if (this.platformContext()) return [];
+    const isAgent = AuthStore.role() === 'field_agent';
+    return OPERATIONAL_ITEMS.filter(item =>
+      AuthStore.hasPermission(item.permission) && !(item.hideForFieldAgent && isAgent)
+    );
+  });
   protected readonly adminItems = computed(() =>
     this.platformContext()
       ? []

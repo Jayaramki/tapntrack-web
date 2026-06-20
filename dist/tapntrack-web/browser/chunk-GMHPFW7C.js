@@ -1,0 +1,1 @@
+import{a as e}from"./chunk-3T4NSRG3.js";import{v as i}from"./chunk-RC4I7ZLI.js";import{N as r,S as o}from"./chunk-2H46AMQ2.js";var p=class t{http=o(i);get(){return this.http.get(`${e.apiUrl}/subscription`)}static \u0275fac=function(n){return new(n||t)};static \u0275prov=r({token:t,factory:t.\u0275fac,providedIn:"root"})};export{p as a};

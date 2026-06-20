@@ -55,6 +55,12 @@ import { BookContextStore } from '../../../core/stores/book-context.store';
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
           <div class="form-grid">
             <div class="field">
+              <label>Customer # <span style="font-weight:400;color:var(--p-text-muted-color)">(optional)</span></label>
+              <input pInputText type="number" formControlName="customer_number" min="1"
+                     placeholder="Auto-assigned if blank" class="w-full" />
+            </div>
+
+            <div class="field">
               <label>Name <span style="color:var(--p-red-500)">*</span></label>
               <input pInputText formControlName="name"
                      placeholder="Full name"
@@ -132,6 +138,7 @@ export class CustomerFormComponent implements OnInit {
   protected readonly isEdit = computed(() => this.customerId() !== null);
 
   protected readonly form = this.fb.group({
+    customer_number: [null as number | null],
     name:        ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
     father_name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
     phone:       ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
@@ -165,6 +172,7 @@ export class CustomerFormComponent implements OnInit {
       book_id: bookId, name: v.name!, father_name: v.father_name!,
       phone: v.phone!, address: v.address!,
       profession: v.profession || undefined, is_active: v.is_active!,
+      customer_number: v.customer_number ?? undefined,
     };
 
     const req$ = this.isEdit()

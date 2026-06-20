@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { delay } from 'rxjs/operators';
 import { ApiResponse } from '../../core/models/api-response.model';
-import { Customer, CreateCustomerRequest, UpdateCustomerRequest } from '../../core/models/customer.model';
+import { Customer, CreateCustomerRequest, UpdateCustomerRequest, CollectLookup } from '../../core/models/customer.model';
 import { BaseCustomerService } from '../../core/services/base-customer.service';
 import { MOCK_CUSTOMERS } from '../data/customers.mock';
 
@@ -25,6 +25,14 @@ export class MockCustomerService extends BaseCustomerService {
       c => c.book_id === book_id && c.is_active && c.name.toLowerCase().includes(q)
     );
     return of({ success: true, data: results }).pipe(delay(150));
+  }
+
+  lookup(book_id: string, _number: number): Observable<ApiResponse<CollectLookup>> {
+    const c = this.customers.find(x => x.book_id === book_id);
+    return of({
+      success: true,
+      data: { customer: { id: c?.id ?? '', customer_number: _number, name: c?.name ?? 'Customer', phone: c?.phone ?? '', is_active: true }, loans: [] },
+    }).pipe(delay(150));
   }
 
   create(data: CreateCustomerRequest): Observable<ApiResponse<Customer>> {

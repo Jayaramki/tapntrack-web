@@ -94,6 +94,26 @@ import { SettingKey } from '../../core/models/app-setting.model';
         </div>
       </div>
     </div>
+
+    <div class="section">
+      <div class="sec-header">🕶️ Field Agent</div>
+      <div class="sec-body">
+        <div class="setting-row">
+          <div class="setting-label">Show loan balance</div>
+          <div class="setting-value">
+            <p-select [options]="balanceOptions" optionLabel="label" optionValue="value"
+                      [(ngModel)]="settingValues['AGENT_SHOW_BALANCE']" appendTo="body" styleClass="w-full" />
+          </div>
+          <div class="save-btn">
+            <p-button size="small" label="Save" icon="pi pi-check"
+                      [loading]="savingKey() === 'AGENT_SHOW_BALANCE'" (onClick)="saveSetting('AGENT_SHOW_BALANCE')" />
+          </div>
+        </div>
+        <div style="font-size:0.78rem; color:var(--p-text-muted-color); margin-top:10px;">
+          When hidden, field agents don't see the remaining/collected balance anywhere — only the customer, loan and the amount box. Admins always see balances.
+        </div>
+      </div>
+    </div>
   `,
 })
 export class SettingsComponent {
@@ -117,6 +137,10 @@ export class SettingsComponent {
   readonly resetOptions = [
     { label: 'Yearly (restart at 1 each January)', value: 'yearly' },
     { label: 'Never (keep counting)', value: 'never' },
+  ];
+  readonly balanceOptions = [
+    { label: 'Show to agents', value: 'true' },
+    { label: 'Hide from agents', value: 'false' },
   ];
 
   /** Live example of the next number for the current prefix/reset choice. */

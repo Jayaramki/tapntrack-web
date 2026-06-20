@@ -4,7 +4,8 @@ export type SettingKey =
   | 'DAYS_TO_PAY'
   | 'LOAN_NUMBER_MODE'
   | 'LOAN_NUMBER_RESET'
-  | 'LOAN_NUMBER_PREFIX';
+  | 'LOAN_NUMBER_PREFIX'
+  | 'AGENT_SHOW_BALANCE';
 
 export interface AppSetting {
   id: string;

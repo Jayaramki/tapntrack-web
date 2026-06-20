@@ -46,6 +46,7 @@ export const routes: Routes = [
       { path: 'loans/:id', loadComponent: () => import('./features/loans/loan-view/loan-view.component').then(m => m.LoanViewComponent), canActivate: [permissionGuard], data: { permission: 'view-loans' } },
       { path: 'loans/:id/edit', loadComponent: () => import('./features/loans/loan-form/loan-form.component').then(m => m.LoanFormComponent), canActivate: [permissionGuard], data: { permission: 'edit-loans' } },
       { path: 'pending-loans', loadComponent: () => import('./features/pending-loans/pending-loans.component').then(m => m.PendingLoansComponent), canActivate: [permissionGuard], data: { permission: 'view-pending-loans' } },
+      { path: 'collect', loadComponent: () => import('./features/collect/collect.component').then(m => m.CollectComponent), canActivate: [permissionGuard], data: { permission: 'record-collection' } },
       { path: 'daily-entry', loadComponent: () => import('./features/daily-entry/daily-entry.component').then(m => m.DailyEntryComponent), canActivate: [permissionGuard], data: { permission: 'record-collection' } },
       { path: 'day-summary', loadComponent: () => import('./features/day-summary/day-summary.component').then(m => m.DaySummaryComponent), canActivate: [permissionGuard], data: { permission: 'view-day-summary' } },
       { path: 'ledger', loadComponent: () => import('./features/ledger/ledger.component').then(m => m.LedgerComponent), canActivate: [permissionGuard], data: { permission: 'view-ledger' } },

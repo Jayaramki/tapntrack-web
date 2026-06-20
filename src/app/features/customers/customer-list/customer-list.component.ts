@@ -55,6 +55,7 @@ import { BookContextStore } from '../../../core/stores/book-context.store';
 
       <ng-template #header>
         <tr>
+          <th pSortableColumn="customer_number" style="width:64px">#</th>
           <th pSortableColumn="name">Name <p-sortIcon field="name" /></th>
           <th [hidden]="responsive.isMobile()">Father Name</th>
           <th>Phone</th>
@@ -66,6 +67,7 @@ import { BookContextStore } from '../../../core/stores/book-context.store';
 
       <ng-template #body let-c>
         <tr>
+          <td style="font-variant-numeric:tabular-nums; font-weight:600;">{{ c.customer_number }}</td>
           <td>
             <div class="cust-name">{{ c.name }}</div>
             @if (responsive.isMobile()) {
@@ -95,7 +97,7 @@ import { BookContextStore } from '../../../core/stores/book-context.store';
       </ng-template>
 
       <ng-template #empty>
-        <tr><td colspan="6" class="text-center p-6" style="color:var(--p-text-muted-color)">
+        <tr><td colspan="7" class="text-center p-6" style="color:var(--p-text-muted-color)">
           No customers found.
         </td></tr>
       </ng-template>
