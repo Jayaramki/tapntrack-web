@@ -453,6 +453,9 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
     this.multiDateMode.set(multi);
     this.rows.set([]);
     if (multi) this.selectedDatesArr = [];
+    // Reload for the new mode (single → today's entries for the line; multi →
+    // no-op until dates are picked) so we don't show a stale "no loans" message.
+    this.loadRows();
   }
 
   protected onDateChange(): void { this.loadRows(); }
