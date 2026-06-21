@@ -130,7 +130,7 @@ interface EntryRow {
         <span class="control-label">Line</span>
         <p-select [options]="lines()" optionLabel="name" optionValue="name"
                   [(ngModel)]="selectedLine" (ngModelChange)="onLineChange()"
-                  placeholder="Select line" styleClass="min-w-36" />
+                  placeholder="Select line" appendTo="body" styleClass="min-w-36" />
       </div>
     </div>
 
