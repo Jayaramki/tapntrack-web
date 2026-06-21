@@ -8,6 +8,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { DataService } from '../../core/services/data.service';
 import { BookContextStore } from '../../core/stores/book-context.store';
+import { AuthStore } from '../../core/stores/auth.store';
 import { CollectLookup, CollectLoan } from '../../core/models/customer.model';
 
 @Component({
@@ -66,7 +67,7 @@ import { CollectLookup, CollectLoan } from '../../core/models/customer.model';
             <div class="loan-card" [class.selected]="selectedId() === loan.id" (click)="select(loan.id)">
               <div class="ln">{{ loan.loan_number }}</div>
               <div class="meta">{{ loan.line }} · {{ loan.loan_type }} · ₹{{ loan.loan_amount }}</div>
-              @if (loan.remaining_balance != null) { <div class="rem">Balance ₹{{ loan.remaining_balance }}</div> }
+              @if (showBalance() && loan.remaining_balance != null) { <div class="rem">Balance ₹{{ loan.remaining_balance }}</div> }
               @if (loan.today_entry) { <div class="done">✓ Collected ₹{{ loan.today_entry.amount }} today</div> }
             </div>
           }
@@ -111,6 +112,7 @@ export class CollectComponent {
   protected readonly selectedLoan = computed<CollectLoan | null>(() =>
     this.result()?.loans.find(l => l.id === this.selectedId()) ?? null
   );
+  protected readonly showBalance = computed(() => !AuthStore.hideBalance());
 
   protected find(): void {
     const num = parseInt(this.numberInput, 10);

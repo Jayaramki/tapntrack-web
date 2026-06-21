@@ -112,19 +112,21 @@ import { Loan } from '../../../core/models/loan.model';
             <div class="detail-label">Disbursed to Customer</div>
             <div class="detail-value">₹{{ (l.loan_amount - l.interest_amount) | number }}</div>
           </div>
-          <div class="detail-item">
-            <div class="detail-label">Total Collected</div>
-            <div class="detail-value" style="color:var(--p-green-600)">
-              ₹{{ (l.total_collected ?? 0) | number }}
+          @if (showBalance()) {
+            <div class="detail-item">
+              <div class="detail-label">Total Collected</div>
+              <div class="detail-value" style="color:var(--p-green-600)">
+                ₹{{ (l.total_collected ?? 0) | number }}
+              </div>
             </div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Remaining Balance</div>
-            <div class="detail-value"
-                 [style]="(l.remaining_balance ?? 0) <= 0 ? 'color:var(--p-green-600)' : 'color:var(--p-red-600)'">
-              ₹{{ (l.remaining_balance ?? 0) | number }}
+            <div class="detail-item">
+              <div class="detail-label">Remaining Balance</div>
+              <div class="detail-value"
+                   [style]="(l.remaining_balance ?? 0) <= 0 ? 'color:var(--p-green-600)' : 'color:var(--p-red-600)'">
+                ₹{{ (l.remaining_balance ?? 0) | number }}
+              </div>
             </div>
-          </div>
+          }
           <div class="detail-item">
             <div class="detail-label">Days Pending</div>
             <div class="detail-value">{{ l.act_pending_days ?? '—' }}</div>
@@ -140,18 +142,20 @@ import { Loan } from '../../../core/models/loan.model';
         </div>
 
         <div class="summary-bar">
-          <div class="stat">
-            <span class="stat-label">Progress</span>
-            <span class="stat-value">{{ progressPct(l) }}%</span>
-          </div>
-          <div class="stat">
-            <span class="stat-label">Collected</span>
-            <span class="stat-value" style="color:var(--p-green-600)">₹{{ (l.total_collected ?? 0) | number }}</span>
-          </div>
-          <div class="stat">
-            <span class="stat-label">Balance</span>
-            <span class="stat-value" style="color:var(--p-red-600)">₹{{ (l.remaining_balance ?? 0) | number }}</span>
-          </div>
+          @if (showBalance()) {
+            <div class="stat">
+              <span class="stat-label">Progress</span>
+              <span class="stat-value">{{ progressPct(l) }}%</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Collected</span>
+              <span class="stat-value" style="color:var(--p-green-600)">₹{{ (l.total_collected ?? 0) | number }}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Balance</span>
+              <span class="stat-value" style="color:var(--p-red-600)">₹{{ (l.remaining_balance ?? 0) | number }}</span>
+            </div>
+          }
           <div class="stat">
             <span class="stat-label">To Collect</span>
             <span class="stat-value">₹{{ l.loan_amount | number }}</span>
@@ -170,6 +174,8 @@ export class LoanViewComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   protected readonly loan = signal<Loan | null>(null);
+  // Balance figures hidden for a field agent whose book has AGENT_SHOW_BALANCE off.
+  protected readonly showBalance = computed(() => !AuthStore.hideBalance());
   protected readonly loadError = signal<string | null>(null);
   protected readonly canEdit = computed(() => AuthStore.hasPermission('edit-loans'));
 

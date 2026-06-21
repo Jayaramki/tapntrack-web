@@ -10,6 +10,7 @@ import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { DataService } from '../../core/services/data.service';
 import { BookContextStore } from '../../core/stores/book-context.store';
+import { AuthStore } from '../../core/stores/auth.store';
 import { PendingLoan } from '../../core/models/loan.model';
 import { Line } from '../../core/models/line.model';
 import { ResponsiveService } from '../../core/services/responsive.service';
@@ -118,7 +119,9 @@ import { CardPaginatorComponent } from '../../shared/components/card-paginator/c
                 <th class="hidden md:table-cell">Line</th>
                 <th pSortableColumn="issued_date" class="hidden lg:table-cell">Issued <p-sortIcon field="issued_date" /></th>
                 <th pSortableColumn="act_pending_days">Days Pending <p-sortIcon field="act_pending_days" /></th>
-                <th pSortableColumn="remaining_balance">Balance <p-sortIcon field="remaining_balance" /></th>
+                @if (showBalance()) {
+                  <th pSortableColumn="remaining_balance">Balance <p-sortIcon field="remaining_balance" /></th>
+                }
                 <th>Status</th>
                 <th class="hidden md:table-cell">Action</th>
               </tr>
@@ -134,7 +137,9 @@ import { CardPaginatorComponent } from '../../shared/components/card-paginator/c
                     {{ loan.act_pending_days }}d
                   </span>
                 </td>
-                <td>&#8377;{{ (loan.remaining_balance ?? 0) | number }}</td>
+                @if (showBalance()) {
+                  <td>&#8377;{{ (loan.remaining_balance ?? 0) | number }}</td>
+                }
                 <td>
                   @if (loan.is_overdue) {
                     <p-tag value="Overdue" severity="danger" />
@@ -180,10 +185,12 @@ import { CardPaginatorComponent } from '../../shared/components/card-paginator/c
                     {{ loan.act_pending_days }}d
                   </span>
                 </div>
-                <div class="stat-item">
-                  <span class="stat-label">Balance</span>
-                  <span class="stat-value">&#8377;{{ (loan.remaining_balance ?? 0) | number }}</span>
-                </div>
+                @if (showBalance()) {
+                  <div class="stat-item">
+                    <span class="stat-label">Balance</span>
+                    <span class="stat-value">&#8377;{{ (loan.remaining_balance ?? 0) | number }}</span>
+                  </div>
+                }
               </div>
               <div class="loan-card-actions">
                 <p-button icon="pi pi-eye" [text]="true" size="small" severity="info"
@@ -211,6 +218,8 @@ export class PendingLoansComponent {
 
   protected readonly loading = signal(true);
   protected readonly allPending = signal<PendingLoan[]>([]);
+  // Balance column hidden for a field agent whose book has AGENT_SHOW_BALANCE off.
+  protected readonly showBalance = computed(() => !AuthStore.hideBalance());
   protected readonly activeTab = signal<string>('daily');
   protected readonly filterLine = signal('');
 

@@ -14,6 +14,7 @@ export interface User {
 export interface AuthUser extends User {
   tenant_id?: string | null;
   tenant_slug?: string | null;
+  hide_balance?: boolean;
   permissions: string[];
   token: string;
 }

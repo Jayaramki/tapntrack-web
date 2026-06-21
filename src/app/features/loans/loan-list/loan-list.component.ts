@@ -13,6 +13,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { DataService } from '../../../core/services/data.service';
 import { BookContextStore } from '../../../core/stores/book-context.store';
+import { AuthStore } from '../../../core/stores/auth.store';
 import { Loan } from '../../../core/models/loan.model';
 import { Line } from '../../../core/models/line.model';
 import { ResponsiveService } from '../../../core/services/responsive.service';
@@ -92,7 +93,9 @@ import { CardPaginatorComponent } from '../../../shared/components/card-paginato
               <th class="hidden md:table-cell">Type</th>
               <th class="hidden lg:table-cell">Line</th>
               <th pSortableColumn="issued_date" class="hidden lg:table-cell">Issued <p-sortIcon field="issued_date" /></th>
-              <th pSortableColumn="remaining_balance">Balance <p-sortIcon field="remaining_balance" /></th>
+              @if (showBalance()) {
+                <th pSortableColumn="remaining_balance">Balance <p-sortIcon field="remaining_balance" /></th>
+              }
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -107,9 +110,11 @@ import { CardPaginatorComponent } from '../../../shared/components/card-paginato
               </td>
               <td class="hidden lg:table-cell">{{ loan.line | titlecase }}</td>
               <td class="hidden lg:table-cell">{{ loan.issued_date | date:'dd/MM/yyyy' }}</td>
-              <td [style]="(loan.remaining_balance ?? 0) <= 0 ? 'color:var(--p-green-600);font-weight:600' : ''">
-                &#8377;{{ (loan.remaining_balance ?? 0) | number }}
-              </td>
+              @if (showBalance()) {
+                <td [style]="(loan.remaining_balance ?? 0) <= 0 ? 'color:var(--p-green-600);font-weight:600' : ''">
+                  &#8377;{{ (loan.remaining_balance ?? 0) | number }}
+                </td>
+              }
               <td>
                 @if (loan.completed_date) {
                   <p-tag value="Completed" severity="success" />
@@ -167,11 +172,13 @@ import { CardPaginatorComponent } from '../../../shared/components/card-paginato
                 <span class="sep">·</span>
                 <span>{{ loan.issued_date | date:'dd/MM/yy' }}</span>
               </div>
-              <div class="loan-card-balance">
-                Balance: <strong [style]="(loan.remaining_balance ?? 0) <= 0 ? 'color:var(--p-green-600)' : ''">
-                  &#8377;{{ (loan.remaining_balance ?? 0) | number }}
-                </strong>
-              </div>
+              @if (showBalance()) {
+                <div class="loan-card-balance">
+                  Balance: <strong [style]="(loan.remaining_balance ?? 0) <= 0 ? 'color:var(--p-green-600)' : ''">
+                    &#8377;{{ (loan.remaining_balance ?? 0) | number }}
+                  </strong>
+                </div>
+              }
               <div class="loan-card-actions">
                 <p-button icon="pi pi-eye" [text]="true" size="small" severity="secondary"
                           pTooltip="View" [routerLink]="['/loans', loan.id]" />
@@ -205,6 +212,8 @@ export class LoanListComponent {
 
   protected readonly loading = signal(true);
   protected readonly loans = signal<Loan[]>([]);
+  // Balance column hidden for a field agent whose book has AGENT_SHOW_BALANCE off.
+  protected readonly showBalance = computed(() => !AuthStore.hideBalance());
   protected readonly searchText = signal('');
   protected readonly filterType = signal('');
   protected readonly filterLine = signal('');
