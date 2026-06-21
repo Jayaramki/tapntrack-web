@@ -41,7 +41,7 @@ import { SettingKey } from '../../core/models/app-setting.model';
           <div class="setting-row">
             <div class="setting-label">{{key.label}}</div>
             <div class="setting-value">
-              <input pInputText [(ngModel)]="settingValues[key.key]" [placeholder]="key.placeholder" />
+              <input pInputText [ngModel]="settingValues()[key.key]" (ngModelChange)="setVal(key.key, $event)" [placeholder]="key.placeholder" />
             </div>
             <div class="save-btn">
               <p-button size="small" label="Save" icon="pi pi-check"
@@ -60,7 +60,7 @@ import { SettingKey } from '../../core/models/app-setting.model';
           <div class="setting-label">Numbering</div>
           <div class="setting-value">
             <p-select [options]="modeOptions" optionLabel="label" optionValue="value"
-                      [(ngModel)]="settingValues['LOAN_NUMBER_MODE']" appendTo="body" styleClass="w-full" />
+                      [ngModel]="settingValues()['LOAN_NUMBER_MODE']" (ngModelChange)="setVal('LOAN_NUMBER_MODE', $event)" appendTo="body" styleClass="w-full" />
           </div>
           <div class="save-btn">
             <p-button size="small" label="Save" icon="pi pi-check"
@@ -71,7 +71,7 @@ import { SettingKey } from '../../core/models/app-setting.model';
           <div class="setting-label">Reset sequence</div>
           <div class="setting-value">
             <p-select [options]="resetOptions" optionLabel="label" optionValue="value"
-                      [(ngModel)]="settingValues['LOAN_NUMBER_RESET']" appendTo="body" styleClass="w-full" />
+                      [ngModel]="settingValues()['LOAN_NUMBER_RESET']" (ngModelChange)="setVal('LOAN_NUMBER_RESET', $event)" appendTo="body" styleClass="w-full" />
           </div>
           <div class="save-btn">
             <p-button size="small" label="Save" icon="pi pi-check"
@@ -81,7 +81,7 @@ import { SettingKey } from '../../core/models/app-setting.model';
         <div class="setting-row">
           <div class="setting-label">Prefix</div>
           <div class="setting-value">
-            <input pInputText [(ngModel)]="settingValues['LOAN_NUMBER_PREFIX']" placeholder="e.g. BF-" />
+            <input pInputText [ngModel]="settingValues()['LOAN_NUMBER_PREFIX']" (ngModelChange)="setVal('LOAN_NUMBER_PREFIX', $event)" placeholder="e.g. BF-" />
           </div>
           <div class="save-btn">
             <p-button size="small" label="Save" icon="pi pi-check"
@@ -102,7 +102,7 @@ import { SettingKey } from '../../core/models/app-setting.model';
           <div class="setting-label">Show loan balance</div>
           <div class="setting-value">
             <p-select [options]="balanceOptions" optionLabel="label" optionValue="value"
-                      [(ngModel)]="settingValues['AGENT_SHOW_BALANCE']" appendTo="body" styleClass="w-full" />
+                      [ngModel]="settingValues()['AGENT_SHOW_BALANCE']" (ngModelChange)="setVal('AGENT_SHOW_BALANCE', $event)" appendTo="body" styleClass="w-full" />
           </div>
           <div class="save-btn">
             <p-button size="small" label="Save" icon="pi pi-check"
@@ -122,7 +122,12 @@ export class SettingsComponent {
   private bookCtx = inject(BookContextStore);
 
   savingKey = signal<string>('');
-  settingValues: Record<string, string> = {};
+  // Signal so the view re-renders when settings load asynchronously (zoneless).
+  settingValues = signal<Record<string, string>>({});
+
+  setVal(key: string, value: string): void {
+    this.settingValues.update(m => ({ ...m, [key]: value }));
+  }
 
   readonly settingKeys: { key: SettingKey; label: string; placeholder: string }[] = [
     { key: 'APP_NAME',            label: 'App / Book Name',     placeholder: 'e.g. Chennai Branch Finance' },
@@ -145,8 +150,9 @@ export class SettingsComponent {
 
   /** Live example of the next number for the current prefix/reset choice. */
   preview(): string {
-    const prefix = this.settingValues['LOAN_NUMBER_PREFIX'] ?? '';
-    const yearly = (this.settingValues['LOAN_NUMBER_RESET'] ?? 'yearly') === 'yearly';
+    const v = this.settingValues();
+    const prefix = v['LOAN_NUMBER_PREFIX'] ?? '';
+    const yearly = (v['LOAN_NUMBER_RESET'] ?? 'yearly') === 'yearly';
     const yy = String(new Date().getFullYear()).slice(-2);
     return `${prefix}${yearly ? yy + '-' : ''}001`;
   }
@@ -156,7 +162,9 @@ export class SettingsComponent {
       const bookId = this.bookCtx.bookId();
       if (bookId) {
         this.data.settings.getAll(bookId).subscribe(res => {
-          (res.data ?? []).forEach(s => { this.settingValues[s.key] = s.value; });
+          const map: Record<string, string> = {};
+          (res.data ?? []).forEach(s => { map[s.key] = s.value; });
+          this.settingValues.set(map);
         });
       }
     });
@@ -164,7 +172,7 @@ export class SettingsComponent {
 
   saveSetting(key: SettingKey) {
     const bookId = this.bookCtx.bookId();
-    const value  = this.settingValues[key] ?? '';
+    const value  = this.settingValues()[key] ?? '';
     if (!bookId) return;  // empty value allowed (e.g. blank prefix)
     this.savingKey.set(key);
     this.data.settings.update(bookId, { key, value }).subscribe({
