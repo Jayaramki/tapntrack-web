@@ -18,7 +18,7 @@ export interface Loan {
   updated_at: string;
   // Joined/computed fields
   customer_name?: string;
-  customer_number?: number;
+  customer_number?: number | null;
   total_collected?: number;
   remaining_balance?: number;
   act_pending_days?: number;

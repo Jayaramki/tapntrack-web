@@ -32,6 +32,7 @@ import { BookContextStore } from '../../../core/stores/book-context.store';
     .field { margin-bottom: 18px; }
     .field label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 6px; }
     .field-error { font-size: 0.75rem; color: var(--p-red-500); margin-top: 4px; }
+    .field-hint { font-size: 0.75rem; color: var(--p-text-muted-color); margin-top: 4px; }
     .full-width { grid-column: 1 / -1; }
     .form-actions { display: flex; gap: 12px; flex-wrap: wrap; padding-top: 8px; }
     .form-actions p-button { flex: 1; min-width: 120px; }
@@ -57,7 +58,11 @@ import { BookContextStore } from '../../../core/stores/book-context.store';
             <div class="field">
               <label>Customer # <span style="font-weight:400;color:var(--p-text-muted-color)">(optional)</span></label>
               <input pInputText type="number" formControlName="customer_number" min="1"
-                     placeholder="Auto-assigned if blank" class="w-full" />
+                     [placeholder]="isEdit() ? 'Clear to free this number' : 'Auto-assigned if blank'"
+                     class="w-full" />
+              @if (isEdit()) {
+                <div class="field-hint">Clear or change it to reassign this number to another customer.</div>
+              }
             </div>
 
             <div class="field">
@@ -168,16 +173,17 @@ export class CustomerFormComponent implements OnInit {
     this.saving.set(true);
     const v = this.form.value;
     const bookId = this.bookCtx.bookId()!;
-    const payload = {
+    const base = {
       book_id: bookId, name: v.name!, father_name: v.father_name!,
       phone: v.phone!, address: v.address!,
       profession: v.profession || undefined, is_active: v.is_active!,
-      customer_number: v.customer_number ?? undefined,
     };
 
     const req$ = this.isEdit()
-      ? this.data.customers.update(this.customerId()!, payload)
-      : this.data.customers.create(payload);
+      // Edit: send explicit null when cleared so the number is freed for reuse.
+      ? this.data.customers.update(this.customerId()!, { ...base, customer_number: v.customer_number ?? null })
+      // Create: omit when blank so the backend auto-assigns the next number.
+      : this.data.customers.create({ ...base, customer_number: v.customer_number ?? undefined });
 
     req$.subscribe({
       next: (res) => {

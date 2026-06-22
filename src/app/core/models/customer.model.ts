@@ -1,7 +1,7 @@
 export interface Customer {
   id: string;
   book_id: string;
-  customer_number?: number;
+  customer_number?: number | null;
   name: string;
   father_name: string;
   phone: string;
@@ -23,7 +23,10 @@ export interface CreateCustomerRequest {
   is_active: boolean;
 }
 
-export type UpdateCustomerRequest = Partial<CreateCustomerRequest>;
+// On edit, customer_number may be sent as null to clear it (freeing the number
+// to be assigned to another customer); the unique-per-book rule then applies.
+export type UpdateCustomerRequest = Partial<Omit<CreateCustomerRequest, 'customer_number'>>
+  & { customer_number?: number | null };
 
 /** A customer's active loan, brief, for the quick-collection screen. */
 export interface CollectLoan {
