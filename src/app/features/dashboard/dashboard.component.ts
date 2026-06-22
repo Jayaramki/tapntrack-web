@@ -11,6 +11,7 @@ import { DataService } from '../../core/services/data.service';
 import { BookContextStore } from '../../core/stores/book-context.store';
 import { DashboardStats } from '../../core/models/dashboard.model';
 import { PendingLoan } from '../../core/models/loan.model';
+import { isoDateStr } from '../../core/utils/date.util';
 
 type DatePreset = 'today' | 'week' | 'month' | 'custom';
 
@@ -287,7 +288,7 @@ export class DashboardComponent {
   onCustomDateChange() {
     const bookId = this.bookCtx.bookId();
     if (!bookId || !this.customFrom || !this.customTo) return;
-    this.loadData(bookId, this.toISO(this.customFrom), this.toISO(this.customTo));
+    this.loadData(bookId, isoDateStr(this.customFrom), isoDateStr(this.customTo));
   }
 
   private loadData(bookId: string, from: string, to: string) {
@@ -309,18 +310,15 @@ export class DashboardComponent {
 
   private getPresetRange(preset: DatePreset): [string, string] {
     const today = new Date();
-    const iso = (d: Date) => d.toISOString().slice(0, 10);
-    if (preset === 'today') return [iso(today), iso(today)];
+    if (preset === 'today') return [isoDateStr(today), isoDateStr(today)];
     if (preset === 'week') {
       const mon = new Date(today); mon.setDate(today.getDate() - today.getDay() + 1);
       const sun = new Date(mon);   sun.setDate(mon.getDate() + 6);
-      return [iso(mon), iso(sun)];
+      return [isoDateStr(mon), isoDateStr(sun)];
     }
     // month
     const from = new Date(today.getFullYear(), today.getMonth(), 1);
     const to   = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    return [iso(from), iso(to)];
+    return [isoDateStr(from), isoDateStr(to)];
   }
-
-  private toISO(d: Date): string { return d.toISOString().slice(0, 10); }
 }

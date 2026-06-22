@@ -229,7 +229,7 @@ export class PendingLoansComponent {
   protected readonly loading = signal(true);
   protected readonly allPending = signal<PendingLoan[]>([]);
   // Balance column hidden for a field agent whose book has AGENT_SHOW_BALANCE off.
-  protected readonly showBalance = computed(() => !AuthStore.hideBalance());
+  protected readonly showBalance = AuthStore.showBalance;
   protected readonly activeTab = signal<string>('daily');
   protected readonly filterLine = signal('');
 

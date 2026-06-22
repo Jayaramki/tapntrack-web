@@ -47,6 +47,14 @@ import { MockSettingsService, MockDashboardService, MockReportsService } from '.
 import { HttpSettingsService } from '../services/http-settings.service';
 import { HttpDashboardService, HttpReportsService } from '../services/http-dashboard.service';
 
+// Platform admin (tenants/plans) + subscription
+import { BaseAdminService } from '../services/base-admin.service';
+import { MockAdminService } from '../../mocks/services/mock-admin.service';
+import { HttpAdminService } from '../services/http-admin.service';
+import { BaseSubscriptionService } from '../services/base-subscription.service';
+import { MockSubscriptionService } from '../../mocks/services/mock-subscription.service';
+import { HttpSubscriptionService } from '../services/http-subscription.service';
+
 /**
  * DataService acts as a service locator.
  * Auth can be routed to the backend when environment.useApiAuth is enabled.
@@ -70,6 +78,8 @@ export class DataService {
   readonly settings: BaseSettingsService;
   readonly dashboard: BaseDashboardService;
   readonly reports: BaseReportsService;
+  readonly admin: BaseAdminService;
+  readonly subscription: BaseSubscriptionService;
 
   constructor() {
     if (environment.useApiAuth) {
@@ -91,5 +101,7 @@ export class DataService {
     this.settings = environment.useMocks ? inject(MockSettingsService) : inject(HttpSettingsService);
     this.dashboard = environment.useMocks ? inject(MockDashboardService) : inject(HttpDashboardService);
     this.reports = environment.useMocks ? inject(MockReportsService) : inject(HttpReportsService);
+    this.admin = environment.useMocks ? inject(MockAdminService) : inject(HttpAdminService);
+    this.subscription = environment.useMocks ? inject(MockSubscriptionService) : inject(HttpSubscriptionService);
   }
 }

@@ -8,7 +8,7 @@ import { SwUpdateComponent } from '../shared/components/sw-update/sw-update.comp
 import { ImpersonationStore } from '../core/stores/impersonation.store';
 import { SubscriptionStore } from '../core/stores/subscription.store';
 import { AuthStore } from '../core/stores/auth.store';
-import { HttpAdminService } from '../core/services/http-admin.service';
+import { DataService } from '../core/services/data.service';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 
@@ -128,7 +128,7 @@ import { MessageService } from 'primeng/api';
 })
 export class LayoutComponent {
   protected readonly responsive = inject(ResponsiveService);
-  private readonly admin = inject(HttpAdminService);
+  private readonly admin = inject(DataService).admin;
   private readonly subscription = inject(SubscriptionStore);
 
   protected readonly impersonating = ImpersonationStore.isActive;

@@ -12,6 +12,7 @@ import { AuthStore } from '../../core/stores/auth.store';
 import { BookContextStore } from '../../core/stores/book-context.store';
 import { CollectionReport, LoanReport, ReportFilter } from '../../core/models/dashboard.model';
 import { Line } from '../../core/models/line.model';
+import { isoDateStr } from '../../core/utils/date.util';
 import { forkJoin } from 'rxjs';
 
 @Component({
@@ -214,8 +215,8 @@ export class ReportsComponent {
 
   generate() {
     const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
-    const from   = this.filterFrom ? this.toISO(this.filterFrom) : this.toISO(new Date());
-    const to     = this.filterTo   ? this.toISO(this.filterTo)   : this.toISO(new Date());
+    const from   = this.filterFrom ? isoDateStr(this.filterFrom) : isoDateStr(new Date());
+    const to     = this.filterTo   ? isoDateStr(this.filterTo)   : isoDateStr(new Date());
 
     const filter: ReportFilter = {
       book_id:   bookId,
@@ -262,6 +263,4 @@ export class ReportsComponent {
     URL.revokeObjectURL(url);
     this.msg.add({ severity: 'success', summary: 'Downloaded', detail: filename, life: 2500 });
   }
-
-  private toISO(d: Date): string { return d.toISOString().slice(0, 10); }
 }

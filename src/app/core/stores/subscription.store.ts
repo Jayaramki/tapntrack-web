@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { HttpSubscriptionService } from '../services/http-subscription.service';
+import { DataService } from '../services/data.service';
 import { Subscription } from '../models/subscription.model';
 
 /**
@@ -9,7 +9,7 @@ import { Subscription } from '../models/subscription.model';
  */
 @Injectable({ providedIn: 'root' })
 export class SubscriptionStore {
-  private readonly api = inject(HttpSubscriptionService);
+  private readonly api = inject(DataService).subscription;
   private readonly _sub = signal<Subscription | null>(null);
 
   readonly subscription = this._sub.asReadonly();

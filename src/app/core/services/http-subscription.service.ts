@@ -4,9 +4,10 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
 import { Subscription } from '../models/subscription.model';
+import { BaseSubscriptionService } from './base-subscription.service';
 
 @Injectable({ providedIn: 'root' })
-export class HttpSubscriptionService {
+export class HttpSubscriptionService extends BaseSubscriptionService {
   private readonly http = inject(HttpClient);
 
   get(): Observable<ApiResponse<Subscription>> {

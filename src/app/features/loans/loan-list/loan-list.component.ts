@@ -223,7 +223,7 @@ export class LoanListComponent {
   protected readonly loading = signal(true);
   protected readonly loans = signal<Loan[]>([]);
   // Balance column hidden for a field agent whose book has AGENT_SHOW_BALANCE off.
-  protected readonly showBalance = computed(() => !AuthStore.hideBalance());
+  protected readonly showBalance = AuthStore.showBalance;
   protected readonly searchText = signal('');
   protected readonly filterType = signal('');
   protected readonly filterLine = signal('');

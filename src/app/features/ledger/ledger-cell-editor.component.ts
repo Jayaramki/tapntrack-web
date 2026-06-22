@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ICellEditorAngularComp } from 'ag-grid-angular';
 import { ICellEditorParams } from 'ag-grid-community';
@@ -67,7 +67,7 @@ import { LedgerCell } from '../../core/models/daily-entry.model';
   `,
 })
 export class LedgerCellEditorComponent implements ICellEditorAngularComp {
-  @ViewChild('inp') inp!: ElementRef<HTMLInputElement>;
+  private readonly inp = viewChild<ElementRef<HTMLInputElement>>('inp');
 
   protected amount: number | null = null;
   protected mode: 'cash' | 'gpay' = 'cash';
@@ -109,7 +109,7 @@ export class LedgerCellEditorComponent implements ICellEditorAngularComp {
 
   afterGuiAttached(): void {
     setTimeout(() => {
-      const el = this.inp?.nativeElement;
+      const el = this.inp()?.nativeElement;
       if (el) { el.focus(); el.select(); }
     }, 0);
   }
@@ -117,7 +117,7 @@ export class LedgerCellEditorComponent implements ICellEditorAngularComp {
   protected toggleMode(e: MouseEvent): void {
     e.stopPropagation();
     this.mode = this.mode === 'cash' ? 'gpay' : 'cash';
-    this.inp?.nativeElement.focus();
+    this.inp()?.nativeElement.focus();
   }
 
   protected save(): void { this.params.stopEditing(); }

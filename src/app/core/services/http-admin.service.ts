@@ -4,13 +4,14 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
 import { AdminTenant, AdminPlan, TenantStatus } from '../models/admin.model';
+import { BaseAdminService } from './base-admin.service';
 
 /**
  * Platform-admin (super_admin) API. Surfaces tenant metadata only; borrower data
  * is reached via audited impersonation.
  */
 @Injectable({ providedIn: 'root' })
-export class HttpAdminService {
+export class HttpAdminService extends BaseAdminService {
   private readonly http = inject(HttpClient);
   private readonly url = `${environment.apiUrl}/admin`;
 

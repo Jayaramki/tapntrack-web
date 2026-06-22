@@ -175,7 +175,7 @@ export class LoanViewComponent implements OnInit {
 
   protected readonly loan = signal<Loan | null>(null);
   // Balance figures hidden for a field agent whose book has AGENT_SHOW_BALANCE off.
-  protected readonly showBalance = computed(() => !AuthStore.hideBalance());
+  protected readonly showBalance = AuthStore.showBalance;
   protected readonly loadError = signal<string | null>(null);
   protected readonly canEdit = computed(() => AuthStore.hasPermission('edit-loans'));
 

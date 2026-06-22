@@ -4,7 +4,7 @@ import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { MessageModule } from 'primeng/message';
-import { HttpSubscriptionService } from '../../core/services/http-subscription.service';
+import { DataService } from '../../core/services/data.service';
 import { Subscription } from '../../core/models/subscription.model';
 import { TenantStatus } from '../../core/models/admin.model';
 
@@ -73,7 +73,7 @@ interface Meter { label: string; used: number; max: number | null; }
   `,
 })
 export class BillingComponent implements OnInit {
-  private readonly api = inject(HttpSubscriptionService);
+  private readonly api = inject(DataService).subscription;
 
   protected readonly sub = signal<Subscription | null>(null);
   protected readonly loadError = signal<string | null>(null);

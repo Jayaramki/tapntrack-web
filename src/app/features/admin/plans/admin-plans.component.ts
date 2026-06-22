@@ -7,7 +7,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ToastModule } from 'primeng/toast';
 import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
-import { HttpAdminService } from '../../../core/services/http-admin.service';
+import { DataService } from '../../../core/services/data.service';
 import { AdminPlan } from '../../../core/models/admin.model';
 
 @Component({
@@ -69,7 +69,7 @@ import { AdminPlan } from '../../../core/models/admin.model';
   `,
 })
 export class AdminPlansComponent implements OnInit {
-  private readonly admin = inject(HttpAdminService);
+  private readonly admin = inject(DataService).admin;
   private readonly toastSvc = inject(MessageService);
 
   protected readonly plans = signal<AdminPlan[]>([]);

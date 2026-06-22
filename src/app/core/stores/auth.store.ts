@@ -17,6 +17,8 @@ export const AuthStore = {
   tenantSlug: computed(() => _authUser()?.tenant_slug ?? null),
   /** Field agent whose book hides loan balances. */
   hideBalance: computed(() => _authUser()?.hide_balance ?? false),
+  /** Inverse of hideBalance — show balance columns/figures. */
+  showBalance: computed(() => !(_authUser()?.hide_balance ?? false)),
   permissions: computed(() => _authUser()?.permissions ?? []),
 
   /** Last workspace slug used, for prefilling the login form (survives logout). */

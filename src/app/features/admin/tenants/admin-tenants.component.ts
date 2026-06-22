@@ -9,7 +9,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { SelectModule } from 'primeng/select';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { HttpAdminService } from '../../../core/services/http-admin.service';
+import { DataService } from '../../../core/services/data.service';
 import { AdminTenant, TenantStatus } from '../../../core/models/admin.model';
 import { ImpersonationStore } from '../../../core/stores/impersonation.store';
 
@@ -94,7 +94,7 @@ const STATUS_SEVERITY: Record<TenantStatus, 'success' | 'info' | 'warn' | 'dange
   `,
 })
 export class AdminTenantsComponent implements OnInit {
-  private readonly admin = inject(HttpAdminService);
+  private readonly admin = inject(DataService).admin;
   private readonly toastSvc = inject(MessageService);
   private readonly confirmSvc = inject(ConfirmationService);
 

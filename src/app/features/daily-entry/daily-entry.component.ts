@@ -1,4 +1,4 @@
-import { Component, signal, inject, effect, OnInit, computed, OnDestroy } from '@angular/core';
+import { Component, signal, inject, effect, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { forkJoin, Observable, of } from 'rxjs';
@@ -14,9 +14,11 @@ import { MessageService } from 'primeng/api';
 import { DataService } from '../../core/services/data.service';
 import { AuthStore } from '../../core/stores/auth.store';
 import { BookContextStore } from '../../core/stores/book-context.store';
+import { ResponsiveService } from '../../core/services/responsive.service';
 import { Loan, LoanLine } from '../../core/models/loan.model';
 import { Line } from '../../core/models/line.model';
 import { DailyEntry } from '../../core/models/daily-entry.model';
+import { localDateStr } from '../../core/utils/date.util';
 
 interface EntryRow {
   loan: Loan;
@@ -377,16 +379,16 @@ interface EntryRow {
     }
   `,
 })
-export class DailyEntryComponent implements OnInit, OnDestroy {
+export class DailyEntryComponent {
   private readonly data = inject(DataService);
   private readonly bookCtx = inject(BookContextStore);
   private readonly toastSvc = inject(MessageService);
-  private readonly resizeListener = () => this.isMobile.set(window.innerWidth < 768);
+  private readonly responsive = inject(ResponsiveService);
 
   protected readonly loading = signal(false);
   protected readonly submittingAll = signal(false);
   protected readonly rows = signal<EntryRow[]>([]);
-  protected readonly isMobile = signal(window.innerWidth < 768);
+  protected readonly isMobile = this.responsive.isMobile;
   protected readonly multiDateMode = signal(false);
 
   protected selectedDate: Date = new Date();
@@ -426,7 +428,7 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
   /** Total new entries that will be created across all selected dates */
   protected readonly pendingEntryCount = computed(() => {
     if (!this.multiDateMode()) return 0;
-    const dates = this.selectedDatesArr.map(d => this.toDateStr(d));
+    const dates = this.selectedDatesArr.map(d => localDateStr(d));
     return this.rows()
       .filter(r => (r.amount ?? 0) > 0)
       .reduce((count, r) => count + dates.filter(d => !r.coveredDates.includes(d)).length, 0);
@@ -443,11 +445,6 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
       this.rows.set([]);
     });
   }
-
-  ngOnInit(): void {
-    window.addEventListener('resize', this.resizeListener);
-  }
-  ngOnDestroy(): void { window.removeEventListener('resize', this.resizeListener); }
 
   protected setMode(multi: boolean): void {
     this.multiDateMode.set(multi);
@@ -467,10 +464,6 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
     return `${String(d.getDate()).padStart(2,'0')} ${months[d.getMonth()]}`;
   }
 
-  protected toDateStr(d: Date): string {
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  }
-
   private loadRows(): void {
     if (!this.selectedLine) return;
     if (this.multiDateMode() && !this.selectedDatesArr.length) return;
@@ -482,7 +475,7 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
         const loans = loansRes.data.filter(l => l.line === this.selectedLine && !l.completed_date);
 
         if (!this.multiDateMode()) {
-          this.data.dailyEntries.getByDate(bookId, this.toDateStr(this.selectedDate)).subscribe({
+          this.data.dailyEntries.getByDate(bookId, localDateStr(this.selectedDate)).subscribe({
             next: (entriesRes) => {
               this.rows.set(loans.map(loan => ({
                 loan, amount: null, mode: 'cash',
@@ -495,7 +488,7 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
           });
         } else {
           // Multi-date: check coverage for every selected date in parallel
-          const dates = this.selectedDatesArr.map(d => this.toDateStr(d));
+          const dates = this.selectedDatesArr.map(d => localDateStr(d));
           const dateChecks: Observable<{ data: DailyEntry[] }>[] =
             dates.map(d => this.data.dailyEntries.getByDate(bookId, d));
 
@@ -530,7 +523,7 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
     const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
     this.data.dailyEntries.create({
       book_id: bookId, loan_id: row.loan.id,
-      entry_date: this.toDateStr(this.selectedDate), amount: row.amount, mode: row.mode,
+      entry_date: localDateStr(this.selectedDate), amount: row.amount, mode: row.mode,
     }).subscribe({
       next: (res) => {
         row.existingEntry = res.data;
@@ -556,7 +549,7 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
       this.submittingAll.set(true);
       this.data.dailyEntries.bulkCreate({
         book_id: bookId,
-        entry_date: this.toDateStr(this.selectedDate),
+        entry_date: localDateStr(this.selectedDate),
         entries: pending.map(r => ({ loan_id: r.loan.id, amount: r.amount!, mode: r.mode })),
       }).subscribe({
         next: (res) => {
@@ -577,7 +570,7 @@ export class DailyEntryComponent implements OnInit, OnDestroy {
       // Multi-date: one bulkCreate per date (skip dates already covered per loan)
       const rows = this.rows().filter(r => (r.amount ?? 0) > 0);
       if (!rows.length) return;
-      const dates = this.selectedDatesArr.map(d => this.toDateStr(d));
+      const dates = this.selectedDatesArr.map(d => localDateStr(d));
       this.submittingAll.set(true);
 
       const dateObs: Observable<{ data: DailyEntry[] }>[] = dates.map(dateStr => {

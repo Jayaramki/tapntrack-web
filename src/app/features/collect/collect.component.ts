@@ -10,6 +10,7 @@ import { DataService } from '../../core/services/data.service';
 import { BookContextStore } from '../../core/stores/book-context.store';
 import { AuthStore } from '../../core/stores/auth.store';
 import { CollectLookup, CollectLoan } from '../../core/models/customer.model';
+import { todayStr } from '../../core/utils/date.util';
 
 @Component({
   selector: 'app-collect',
@@ -112,7 +113,7 @@ export class CollectComponent {
   protected readonly selectedLoan = computed<CollectLoan | null>(() =>
     this.result()?.loans.find(l => l.id === this.selectedId()) ?? null
   );
-  protected readonly showBalance = computed(() => !AuthStore.hideBalance());
+  protected readonly showBalance = AuthStore.showBalance;
 
   protected find(): void {
     const num = parseInt(this.numberInput, 10);
@@ -153,7 +154,7 @@ export class CollectComponent {
     this.data.dailyEntries.create({
       book_id: bookId,
       loan_id: loan.id,
-      entry_date: this.today(),
+      entry_date: todayStr(),
       amount: this.amount,
       mode: this.mode(),
     }).subscribe({
@@ -176,10 +177,5 @@ export class CollectComponent {
     this.result.set(null);
     this.selectedId.set(null);
     this.error.set(null);
-  }
-
-  private today(): string {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 }
