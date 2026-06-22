@@ -52,6 +52,11 @@ import { CardPaginatorComponent } from '../../shared/components/card-paginator/c
     .stat-label { font-size: 0.7rem; color: var(--p-text-muted-color); text-transform: uppercase; }
     .stat-value { font-size: 0.95rem; font-weight: 700; }
     .loan-card-actions { display: flex; gap: 4px; border-top: 1px solid var(--p-surface-border, #e2e8f0); padding-top: 8px; }
+    .cust-num {
+      display: inline-block; font-family: monospace; font-weight: 700; font-size: 0.78rem;
+      background: var(--p-primary-100); color: var(--p-primary-700);
+      border-radius: 5px; padding: 1px 6px; margin-right: 6px;
+    }
   `],
   template: `
     <div class="page-header">
@@ -129,7 +134,12 @@ import { CardPaginatorComponent } from '../../shared/components/card-paginator/c
             <ng-template pTemplate="body" let-loan>
               <tr [class]="rowClass(loan, threshold)">
                 <td><span class="font-mono text-sm">{{ loan.loan_number }}</span></td>
-                <td>{{ loan.customer_name }}</td>
+                <td>
+                  @if (loan.customer_number != null) {
+                    <span class="cust-num">#{{ loan.customer_number }}</span>
+                  }
+                  {{ loan.customer_name }}
+                </td>
                 <td class="hidden md:table-cell">{{ loan.line }}</td>
                 <td class="hidden lg:table-cell">{{ loan.issued_date }}</td>
                 <td>
@@ -176,7 +186,12 @@ import { CardPaginatorComponent } from '../../shared/components/card-paginator/c
                   <p-tag value="Pending" severity="warn" />
                 }
               </div>
-              <div class="loan-card-name">{{ loan.customer_name }}</div>
+              <div class="loan-card-name">
+                @if (loan.customer_number != null) {
+                  <span class="cust-num">#{{ loan.customer_number }}</span>
+                }
+                {{ loan.customer_name }}
+              </div>
               <div class="loan-card-meta">{{ loan.line }} · {{ loan.loan_type | titlecase }}</div>
               <div class="loan-card-stats">
                 <div class="stat-item">

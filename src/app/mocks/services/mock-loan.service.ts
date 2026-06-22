@@ -27,6 +27,7 @@ function enrichLoan(loan: Loan): Loan {
   return {
     ...loan,
     customer_name: customer?.name ?? '',
+    customer_number: customer?.customer_number,
     total_collected: total,
     remaining_balance: loan.loan_amount - total,
   };
