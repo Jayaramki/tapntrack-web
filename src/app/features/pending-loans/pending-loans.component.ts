@@ -52,11 +52,6 @@ import { CardPaginatorComponent } from '../../shared/components/card-paginator/c
     .stat-label { font-size: 0.7rem; color: var(--p-text-muted-color); text-transform: uppercase; }
     .stat-value { font-size: 0.95rem; font-weight: 700; }
     .loan-card-actions { display: flex; gap: 4px; border-top: 1px solid var(--p-surface-border, #e2e8f0); padding-top: 8px; }
-    .cust-num {
-      display: inline-block; font-family: monospace; font-weight: 700; font-size: 0.78rem;
-      background: var(--p-primary-100); color: var(--p-primary-700);
-      border-radius: 5px; padding: 1px 6px; margin-right: 6px;
-    }
   `],
   template: `
     <div class="page-header">

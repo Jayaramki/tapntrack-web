@@ -102,6 +102,7 @@ export class MockReportsService extends BaseReportsService {
         date: e.entry_date,
         loan_number: loan?.loan_number ?? '',
         customer_name: customer?.name ?? '',
+        customer_number: customer?.customer_number,
         amount: e.amount,
         mode: e.mode,
       };
@@ -117,6 +118,7 @@ export class MockReportsService extends BaseReportsService {
       return {
         loan_number: l.loan_number,
         customer_name: customer?.name ?? '',
+        customer_number: customer?.customer_number,
         loan_amount: l.loan_amount,
         total_collected: total,
         remaining_balance: l.loan_amount - total,
@@ -128,4 +130,4 @@ export class MockReportsService extends BaseReportsService {
     });
     return of({ success: true, data: report }).pipe(delay(300));
   }
-}
+}

@@ -224,8 +224,16 @@ export class LedgerComponent {
         field: 'customer_name',
         headerName: 'Customer',
         pinned: 'left',
-        width: 158,
+        width: 178,
         lockPinned: true,
+        // Prepend the permanent customer-number badge (skipped on the pinned total row).
+        cellRenderer: (p: any) => {
+          const name = p.value == null ? '' : String(p.value)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          const num = p.data?.customer_number;
+          const badge = (!p.node.rowPinned && num != null) ? `<span class="cust-num">#${num}</span>` : '';
+          return `${badge}${name}`;
+        },
         cellStyle: (p: any) => ({
           fontSize: '0.88rem',
           fontWeight: p.node.rowPinned ? '700' : '400',
@@ -362,6 +370,7 @@ export class LedgerComponent {
         loan_id: row.loan_id,
         loan_number: row.loan_number,
         customer_name: row.customer_name,
+        customer_number: row.customer_number,
         loan_amount: row.loan_amount,
         total_collected: row.total_collected,
         remaining_balance: row.remaining_balance,

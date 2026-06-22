@@ -124,6 +124,7 @@ export class MockLedgerService extends BaseLedgerService {
         loan_id: loan.id,
         loan_number: loan.loan_number,
         customer_name: customer?.name ?? '',
+        customer_number: customer?.customer_number,
         loan_amount: loan.loan_amount,
         line: loan.line,                    // for line filter
         total_collected: totalCollected,

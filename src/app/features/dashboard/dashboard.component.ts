@@ -213,7 +213,12 @@ type DatePreset = 'today' | 'week' | 'month' | 'custom';
               @for (loan of pendingLoans().slice(0,5); track loan.id) {
                 <tr style="cursor:pointer" (click)="router.navigate(['/loans',loan.id])">
                   <td><strong>{{loan.loan_number}}</strong></td>
-                  <td>{{loan.customer_name}}</td>
+                  <td>
+                    @if (loan.customer_number != null) {
+                      <span class="cust-num">#{{loan.customer_number}}</span>
+                    }
+                    {{loan.customer_name}}
+                  </td>
                   <td><span style="text-transform:capitalize;font-size:0.78rem">{{loan.loan_type}}</span></td>
                   <td style="text-align:right">{{loan.loan_amount | currency:'INR':'symbol':'1.0-0'}}</td>
                   <td style="text-align:right">{{(loan.remaining_balance ?? 0) | currency:'INR':'symbol':'1.0-0'}}</td>

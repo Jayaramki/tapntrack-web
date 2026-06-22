@@ -49,11 +49,6 @@ import { CardPaginatorComponent } from '../../../shared/components/card-paginato
     .sep { color: var(--p-surface-border, #ccc); }
     .loan-card-balance { font-size: 0.88rem; margin-bottom: 10px; }
     .loan-card-actions { display: flex; gap: 4px; border-top: 1px solid var(--p-surface-border, #e2e8f0); padding-top: 8px; margin-top: 4px; }
-    .cust-num {
-      display: inline-block; font-family: monospace; font-weight: 700; font-size: 0.78rem;
-      background: var(--p-primary-100); color: var(--p-primary-700);
-      border-radius: 5px; padding: 1px 6px; margin-right: 6px;
-    }
   `],
   template: `
     <p-toast />

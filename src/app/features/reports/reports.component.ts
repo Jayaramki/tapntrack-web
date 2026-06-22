@@ -4,6 +4,7 @@ import { CurrencyPipe, TitleCasePipe } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
+import { TabsModule } from 'primeng/tabs';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { DataService } from '../../core/services/data.service';
@@ -17,7 +18,7 @@ import { forkJoin } from 'rxjs';
   selector: 'app-reports',
   standalone: true,
   imports: [FormsModule, CurrencyPipe, TitleCasePipe,
-            ButtonModule, SelectModule, DatePickerModule, ToastModule],
+            ButtonModule, SelectModule, DatePickerModule, TabsModule, ToastModule],
   providers: [MessageService],
   styles: [`
     :host { display:block; padding:16px; }
@@ -28,13 +29,13 @@ import { forkJoin } from 'rxjs';
                     border-radius:10px; padding:14px 16px; }
     .filter-group { display:flex; flex-direction:column; gap:4px; }
     .filter-label { font-size:0.78rem; font-weight:600; color:var(--p-text-muted-color); }
-    .report-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
     .report-card  { background:var(--p-surface-card); border:1px solid var(--p-surface-border);
                     border-radius:12px; overflow:hidden; }
-    .card-header  { display:flex; align-items:center; justify-content:space-between;
-                    padding:12px 16px; border-bottom:1px solid var(--p-surface-border); background:var(--p-surface-50); }
-    .card-title   { font-weight:700; font-size:0.95rem; margin:0; }
-    .card-body    { padding:0; max-height:300px; overflow-y:auto; }
+    .tab-toolbar  { display:flex; align-items:center; justify-content:space-between; gap:12px;
+                    padding:4px 2px 12px; }
+    .row-count    { font-size:0.78rem; color:var(--p-text-muted-color); font-weight:600; }
+    .table-wrap   { max-height:calc(100vh - 340px); min-height:160px; overflow:auto;
+                    border:1px solid var(--p-surface-border); border-radius:8px; }
     .report-table { width:100%; border-collapse:collapse; font-size:0.84rem; }
     .report-table th { position:sticky; top:0; z-index:1; text-align:left; padding:8px 12px;
                        font-size:0.76rem; font-weight:600; color:var(--p-text-muted-color);
@@ -82,78 +83,96 @@ import { forkJoin } from 'rxjs';
       </div>
     </div>
 
-    <!-- Report Cards -->
-    <div class="report-cards">
+    <!-- Report Tabs -->
+    <div class="report-card">
+      <p-tabs value="collection">
+        <p-tablist>
+          <p-tab value="collection">📥 Collection Report</p-tab>
+          <p-tab value="loans">📋 Loan Summary Report</p-tab>
+        </p-tablist>
+        <p-tabpanels>
 
-      <!-- Collection Report -->
-      <div class="report-card">
-        <div class="card-header">
-          <h3 class="card-title">📥 Collection Report</h3>
-          <p-button icon="pi pi-download" label="CSV" severity="secondary" size="small"
-                    [disabled]="collectionReport().length === 0"
-                    (onClick)="exportCsv('collection')"></p-button>
-        </div>
-        <div class="card-body">
-          @if (collectionReport().length === 0) {
-            <div class="empty-state">No data. Click Generate to load.</div>
-          } @else {
-            <table class="report-table">
-              <thead><tr>
-                <th>Date</th><th>Loan #</th><th>Customer</th>
-                <th>Mode</th><th class="amt">Amount</th>
-              </tr></thead>
-              <tbody>
-                @for (row of collectionReport(); track $index) {
-                  <tr>
-                    <td>{{row.date}}</td>
-                    <td><strong>{{row.loan_number}}</strong></td>
-                    <td>{{row.customer_name}}</td>
-                    <td><span class="badge" [class]="row.mode">{{row.mode | titlecase}}</span></td>
-                    <td class="amt">{{row.amount | currency:'INR':'symbol':'1.0-0'}}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          }
-        </div>
-      </div>
+          <!-- Collection Report -->
+          <p-tabpanel value="collection">
+            <div class="tab-toolbar">
+              <span class="row-count">{{ collectionReport().length }} rows</span>
+              <p-button icon="pi pi-download" label="Export CSV" severity="secondary" size="small"
+                        [disabled]="collectionReport().length === 0"
+                        (onClick)="exportCsv('collection')"></p-button>
+            </div>
+            @if (collectionReport().length === 0) {
+              <div class="empty-state">No data. Click Generate to load.</div>
+            } @else {
+              <div class="table-wrap">
+                <table class="report-table">
+                  <thead><tr>
+                    <th>Date</th><th>Loan #</th><th>Customer</th>
+                    <th>Mode</th><th class="amt">Amount</th>
+                  </tr></thead>
+                  <tbody>
+                    @for (row of collectionReport(); track $index) {
+                      <tr>
+                        <td>{{row.date}}</td>
+                        <td><strong>{{row.loan_number}}</strong></td>
+                        <td>
+                          @if (row.customer_number != null) {
+                            <span class="cust-num">#{{row.customer_number}}</span>
+                          }
+                          {{row.customer_name}}
+                        </td>
+                        <td><span class="badge" [class]="row.mode">{{row.mode | titlecase}}</span></td>
+                        <td class="amt">{{row.amount | currency:'INR':'symbol':'1.0-0'}}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </p-tabpanel>
 
-      <!-- Loan Summary Report -->
-      <div class="report-card">
-        <div class="card-header">
-          <h3 class="card-title">📋 Loan Summary Report</h3>
-          <p-button icon="pi pi-download" label="CSV" severity="secondary" size="small"
-                    [disabled]="loanReport().length === 0"
-                    (onClick)="exportCsv('loans')"></p-button>
-        </div>
-        <div class="card-body">
-          @if (loanReport().length === 0) {
-            <div class="empty-state">No data. Click Generate to load.</div>
-          } @else {
-            <table class="report-table">
-              <thead><tr>
-                <th>Loan #</th><th>Customer</th><th>Type</th>
-                <th class="amt">Loan Amt</th><th class="amt">Collected</th><th class="amt">Balance</th>
-              </tr></thead>
-              <tbody>
-                @for (row of loanReport(); track $index) {
-                  <tr>
-                    <td><strong>{{row.loan_number}}</strong></td>
-                    <td>{{row.customer_name}}</td>
-                    <td><span class="badge" [class]="row.loan_type">{{row.loan_type | titlecase}}</span></td>
-                    <td class="amt">{{row.loan_amount | currency:'INR':'symbol':'1.0-0'}}</td>
-                    <td class="amt">{{row.total_collected | currency:'INR':'symbol':'1.0-0'}}</td>
-                    <td class="amt" [style.color]="row.remaining_balance > 0 ? 'var(--p-red-500)' : 'var(--p-green-500)'">
-                      {{row.remaining_balance | currency:'INR':'symbol':'1.0-0'}}
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          }
-        </div>
-      </div>
+          <!-- Loan Summary Report -->
+          <p-tabpanel value="loans">
+            <div class="tab-toolbar">
+              <span class="row-count">{{ loanReport().length }} rows</span>
+              <p-button icon="pi pi-download" label="Export CSV" severity="secondary" size="small"
+                        [disabled]="loanReport().length === 0"
+                        (onClick)="exportCsv('loans')"></p-button>
+            </div>
+            @if (loanReport().length === 0) {
+              <div class="empty-state">No data. Click Generate to load.</div>
+            } @else {
+              <div class="table-wrap">
+                <table class="report-table">
+                  <thead><tr>
+                    <th>Loan #</th><th>Customer</th><th>Type</th>
+                    <th class="amt">Loan Amt</th><th class="amt">Collected</th><th class="amt">Balance</th>
+                  </tr></thead>
+                  <tbody>
+                    @for (row of loanReport(); track $index) {
+                      <tr>
+                        <td><strong>{{row.loan_number}}</strong></td>
+                        <td>
+                          @if (row.customer_number != null) {
+                            <span class="cust-num">#{{row.customer_number}}</span>
+                          }
+                          {{row.customer_name}}
+                        </td>
+                        <td><span class="badge" [class]="row.loan_type">{{row.loan_type | titlecase}}</span></td>
+                        <td class="amt">{{row.loan_amount | currency:'INR':'symbol':'1.0-0'}}</td>
+                        <td class="amt">{{row.total_collected | currency:'INR':'symbol':'1.0-0'}}</td>
+                        <td class="amt" [style.color]="row.remaining_balance > 0 ? 'var(--p-red-500)' : 'var(--p-green-500)'">
+                          {{row.remaining_balance | currency:'INR':'symbol':'1.0-0'}}
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </p-tabpanel>
 
+        </p-tabpanels>
+      </p-tabs>
     </div>
   `,
 })
@@ -224,15 +243,15 @@ export class ReportsComponent {
     let csv = '';
     let filename = '';
     if (type === 'collection') {
-      csv = ['Date,Loan #,Customer,Mode,Amount',
+      csv = ['Date,Loan #,Cust #,Customer,Mode,Amount',
              ...this.collectionReport().map(r =>
-               `${r.date},${r.loan_number},"${r.customer_name}",${r.mode},${r.amount}`)
+               `${r.date},${r.loan_number},${r.customer_number ?? ''},"${r.customer_name}",${r.mode},${r.amount}`)
             ].join('\n');
       filename = 'collection-report.csv';
     } else {
-      csv = ['Loan #,Customer,Type,Loan Amount,Collected,Balance,Issued Date,Completed',
+      csv = ['Loan #,Cust #,Customer,Type,Loan Amount,Collected,Balance,Issued Date,Completed',
              ...this.loanReport().map(r =>
-               `${r.loan_number},"${r.customer_name}",${r.loan_type},${r.loan_amount},${r.total_collected},${r.remaining_balance},${r.issued_date},${r.completed_date ?? ''}`)
+               `${r.loan_number},${r.customer_number ?? ''},"${r.customer_name}",${r.loan_type},${r.loan_amount},${r.total_collected},${r.remaining_balance},${r.issued_date},${r.completed_date ?? ''}`)
             ].join('\n');
       filename = 'loan-report.csv';
     }

@@ -27,6 +27,7 @@ export interface CollectionReport {
   date: string;
   loan_number: string;
   customer_name: string;
+  customer_number?: number | null;
   amount: number;
   mode: string;
 }
@@ -34,6 +35,7 @@ export interface CollectionReport {
 export interface LoanReport {
   loan_number: string;
   customer_name: string;
+  customer_number?: number | null;
   loan_amount: number;
   total_collected: number;
   remaining_balance: number;
