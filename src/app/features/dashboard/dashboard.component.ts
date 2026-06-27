@@ -6,7 +6,9 @@ import { ButtonModule } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { DataService } from '../../core/services/data.service';
 import { BookContextStore } from '../../core/stores/book-context.store';
 import { DashboardStats } from '../../core/models/dashboard.model';
@@ -242,13 +244,30 @@ export class DashboardComponent {
   private bookCtx = inject(BookContextStore);
   readonly router = inject(Router);
 
-  stats        = signal<DashboardStats | null>(null);
-  pendingLoans = signal<PendingLoan[]>([]);
-  loading      = signal(true);
   activePreset = signal<DatePreset>('month');
 
   customFrom: Date | null = null;
   customTo:   Date | null = null;
+
+  // The selected range drives the resource; switching preset/book/custom dates
+  // updates `query` and auto-cancels a superseded load.
+  private readonly query = signal<{ bookId: string; from: string; to: string } | null>(null);
+  private readonly dashRes = rxResource({
+    params: () => this.query(),
+    stream: ({ params }) => params
+      ? forkJoin({
+          statsRes:   this.data.dashboard.getStats(params.bookId, params.from, params.to),
+          pendingRes: this.data.loans.getPending(params.bookId),
+        }).pipe(map(({ statsRes, pendingRes }) => ({
+          stats: statsRes.data ?? null,
+          pending: (pendingRes.data ?? []).slice().sort((a, b) => b.act_pending_days - a.act_pending_days),
+        })))
+      : of({ stats: null as DashboardStats | null, pending: [] as PendingLoan[] }),
+    defaultValue: { stats: null as DashboardStats | null, pending: [] as PendingLoan[] },
+  });
+  readonly stats        = computed(() => this.dashRes.value().stats);
+  readonly pendingLoans = computed(() => this.dashRes.value().pending);
+  readonly loading      = this.dashRes.isLoading;
 
   readonly presets = [
     { key: 'today' as DatePreset, label: 'Today'     },
@@ -277,7 +296,7 @@ export class DashboardComponent {
       const preset = this.activePreset();
       if (!bookId || preset === 'custom') return;
       const [from, to] = this.getPresetRange(preset);
-      this.loadData(bookId, from, to);
+      this.query.set({ bookId, from, to });
     });
   }
 
@@ -288,24 +307,7 @@ export class DashboardComponent {
   onCustomDateChange() {
     const bookId = this.bookCtx.bookId();
     if (!bookId || !this.customFrom || !this.customTo) return;
-    this.loadData(bookId, isoDateStr(this.customFrom), isoDateStr(this.customTo));
-  }
-
-  private loadData(bookId: string, from: string, to: string) {
-    this.loading.set(true);
-
-    forkJoin({
-      statsRes:   this.data.dashboard.getStats(bookId, from, to),
-      pendingRes: this.data.loans.getPending(bookId),
-    }).subscribe({
-      next: ({ statsRes, pendingRes }) => {
-        this.stats.set(statsRes.data ?? null);
-        const sorted = (pendingRes.data ?? []).sort((a, b) => b.act_pending_days - a.act_pending_days);
-        this.pendingLoans.set(sorted);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+    this.query.set({ bookId, from: isoDateStr(this.customFrom), to: isoDateStr(this.customTo) });
   }
 
   private getPresetRange(preset: DatePreset): [string, string] {

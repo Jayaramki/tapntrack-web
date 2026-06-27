@@ -1,4 +1,5 @@
-﻿import { Component, effect, signal, inject } from '@angular/core';
+﻿import { Component, effect, signal, computed, inject } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { CurrencyPipe, TitleCasePipe } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
@@ -13,7 +14,8 @@ import { BookContextStore } from '../../core/stores/book-context.store';
 import { CollectionReport, LoanReport, ReportFilter } from '../../core/models/dashboard.model';
 import { Line } from '../../core/models/line.model';
 import { isoDateStr } from '../../core/utils/date.util';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-reports',
@@ -182,10 +184,6 @@ export class ReportsComponent {
   private msg  = inject(MessageService);
   private bookCtx = inject(BookContextStore);
 
-  collectionReport = signal<CollectionReport[]>([]);
-  loanReport       = signal<LoanReport[]>([]);
-  loading          = signal(false);
-
   filterFrom: Date | null = null;
   filterTo:   Date | null = null;
   filterType: string | null = null;
@@ -196,7 +194,30 @@ export class ReportsComponent {
     { label: 'Weekly',  value: 'weekly'  },
     { label: 'Monthly', value: 'monthly' },
   ];
-  readonly lines = signal<Line[]>([]);
+
+  // Generate is explicit (button / book-change): generate() snapshots the filters
+  // into `query`, which drives the resource and auto-cancels a superseded run.
+  private readonly query = signal<ReportFilter | null>(null);
+  private readonly reportRes = rxResource({
+    params: () => this.query(),
+    stream: ({ params }) => params
+      ? forkJoin({
+          col:   this.data.reports.getCollectionReport(params),
+          loans: this.data.reports.getLoanReport(params),
+        }).pipe(map(({ col, loans }) => ({ col: col.data ?? [], loans: loans.data ?? [] })))
+      : of({ col: [] as CollectionReport[], loans: [] as LoanReport[] }),
+    defaultValue: { col: [], loans: [] },
+  });
+  readonly collectionReport = computed(() => this.reportRes.value().col);
+  readonly loanReport       = computed(() => this.reportRes.value().loans);
+  readonly loading          = this.reportRes.isLoading;
+
+  private readonly linesRes = rxResource({
+    params: () => this.bookCtx.bookId(),
+    stream: ({ params }) => params ? this.data.lines.getAll(params).pipe(map(r => r.data)) : of<Line[]>([]),
+    defaultValue: [],
+  });
+  readonly lines = this.linesRes.value;
 
   constructor() {
     // Default date range: current month (once).
@@ -204,39 +225,19 @@ export class ReportsComponent {
     this.filterFrom = new Date(now.getFullYear(), now.getMonth(), 1);
     this.filterTo   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    // Reload lines + report whenever the active book changes (header picker).
+    // Re-run the report whenever the active book changes (header picker).
     effect(() => {
-      const bookId = this.bookCtx.bookId();
-      if (!bookId) return;
-      this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
-      this.generate();
+      if (this.bookCtx.bookId()) this.generate();
     });
   }
 
   generate() {
-    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
-    const from   = this.filterFrom ? isoDateStr(this.filterFrom) : isoDateStr(new Date());
-    const to     = this.filterTo   ? isoDateStr(this.filterTo)   : isoDateStr(new Date());
-
-    const filter: ReportFilter = {
-      book_id:   bookId,
-      from_date: from,
-      to_date:   to,
+    this.query.set({
+      book_id:   this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID,
+      from_date: this.filterFrom ? isoDateStr(this.filterFrom) : isoDateStr(new Date()),
+      to_date:   this.filterTo   ? isoDateStr(this.filterTo)   : isoDateStr(new Date()),
       ...(this.filterType && { loan_type: this.filterType }),
       ...(this.filterLine && { line: this.filterLine }),
-    };
-    this.loading.set(true);
-
-    forkJoin({
-      col:   this.data.reports.getCollectionReport(filter),
-      loans: this.data.reports.getLoanReport(filter),
-    }).subscribe({
-      next: ({ col, loans }) => {
-        this.collectionReport.set(col.data ?? []);
-        this.loanReport.set(loans.data ?? []);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
     });
   }
 
