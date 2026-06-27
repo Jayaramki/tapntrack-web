@@ -1,7 +1,6 @@
-import { Component, signal, inject, effect, computed } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
-import { forkJoin, Observable, of } from 'rxjs';
 import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
@@ -11,23 +10,8 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
-import { DataService } from '../../core/services/data.service';
-import { AuthStore } from '../../core/stores/auth.store';
-import { BookContextStore } from '../../core/stores/book-context.store';
 import { ResponsiveService } from '../../core/services/responsive.service';
-import { Loan, LoanLine } from '../../core/models/loan.model';
-import { Line } from '../../core/models/line.model';
-import { DailyEntry } from '../../core/models/daily-entry.model';
-import { localDateStr } from '../../core/utils/date.util';
-
-interface EntryRow {
-  loan: Loan;
-  amount: number | null;
-  mode: 'cash' | 'gpay';
-  existingEntry: DailyEntry | null;   // single-date mode
-  coveredDates: string[];             // multi-date mode: dates already entered
-  saving: boolean;
-}
+import { DailyEntryFacade, EntryRow } from './daily-entry.facade';
 
 @Component({
   selector: 'app-daily-entry',
@@ -37,7 +21,7 @@ interface EntryRow {
     DatePickerModule, SelectModule, ButtonModule,
     InputNumberModule, ToastModule, TableModule, TagModule, TooltipModule,
   ],
-  providers: [MessageService],
+  providers: [MessageService, DailyEntryFacade],
   styles: [`
     .page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
     .page-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
@@ -118,12 +102,12 @@ interface EntryRow {
       <div class="control-group">
         <span class="control-label">{{ multiDateMode() ? 'Select Missed Dates' : 'Date' }}</span>
         @if (!multiDateMode()) {
-          <p-datepicker [(ngModel)]="selectedDate" [showIcon]="true" dateFormat="dd/mm/yy"
-                        [maxDate]="today" (ngModelChange)="onDateChange()" styleClass="w-44" />
+          <p-datepicker [ngModel]="selectedDate()" [showIcon]="true" dateFormat="dd/mm/yy"
+                        [maxDate]="today" (ngModelChange)="selectedDate.set($event)" styleClass="w-44" />
         } @else {
-          <p-datepicker [(ngModel)]="selectedDatesArr" selectionMode="multiple"
+          <p-datepicker [ngModel]="selectedDates()" selectionMode="multiple"
                         [showIcon]="true" dateFormat="dd/mm/yy" [maxDate]="today"
-                        (ngModelChange)="onMultiDatesChange()" styleClass="w-52"
+                        (ngModelChange)="selectedDates.set($event)" styleClass="w-52"
                         placeholder="Pick missed dates…" />
         }
       </div>
@@ -131,20 +115,20 @@ interface EntryRow {
       <div class="control-group">
         <span class="control-label">Line</span>
         <p-select [options]="lines()" optionLabel="name" optionValue="name"
-                  [(ngModel)]="selectedLine" (ngModelChange)="onLineChange()"
+                  [ngModel]="selectedLine()" (ngModelChange)="selectedLine.set($event)"
                   placeholder="Select line" appendTo="body" styleClass="min-w-36" />
       </div>
     </div>
 
     <!-- Multi-date: selected dates chips -->
-    @if (multiDateMode() && selectedDatesArr.length) {
+    @if (multiDateMode() && selectedDates().length) {
       <div class="dates-chips">
         <span class="control-label">Selected:</span>
-        @for (d of selectedDatesArr; track d) {
+        @for (d of selectedDates(); track d) {
           <span class="date-chip"><i class="pi pi-calendar" style="font-size:0.7rem"></i>{{ fmtDate(d) }}</span>
         }
         <span class="control-label" style="margin-left:4px">
-          — amounts entered once will apply to all {{ selectedDatesArr.length }} dates
+          — amounts entered once will apply to all {{ selectedDates().length }} dates
         </span>
       </div>
     }
@@ -154,19 +138,19 @@ interface EntryRow {
         <i class="pi pi-spin pi-spinner" style="font-size:2rem"></i>
         <p class="mt-2">Loading loans…</p>
       </div>
-    } @else if (!selectedLine) {
+    } @else if (!selectedLine()) {
       <div class="text-center py-12" style="color:var(--p-text-muted-color)">
         <i class="pi pi-info-circle" style="font-size:2rem"></i>
         <p class="mt-2">Select a line to load loans</p>
       </div>
-    } @else if (multiDateMode() && !selectedDatesArr.length) {
+    } @else if (multiDateMode() && !selectedDates().length) {
       <div class="text-center py-12" style="color:var(--p-text-muted-color)">
         <i class="pi pi-calendar-plus" style="font-size:2rem"></i>
         <p class="mt-2">Select the missed dates above to load loans</p>
       </div>
     } @else if (rows().length === 0) {
       <div class="text-center py-12" style="color:var(--p-text-muted-color)">
-        No active loans for {{ selectedLine }}.
+        No active loans for {{ selectedLine() }}.
       </div>
     } @else {
 
@@ -185,16 +169,16 @@ interface EntryRow {
             <span class="stat-label">{{ multiDateMode() ? 'Per Day' : 'Total' }}</span>
             <span class="stat-value">₹{{ (totalCash() + totalGpay()) | number }}</span>
           </div>
-          @if (multiDateMode() && selectedDatesArr.length > 1) {
+          @if (multiDateMode() && selectedDates().length > 1) {
             <div class="totals-divider"></div>
             <div class="stat">
               <span class="stat-label">× Dates</span>
-              <span class="stat-value">{{ selectedDatesArr.length }}</span>
+              <span class="stat-value">{{ selectedDates().length }}</span>
             </div>
             <div class="stat">
               <span class="stat-label">Grand Total</span>
               <span class="stat-value" style="color:var(--p-primary-color)">
-                ₹{{ ((totalCash() + totalGpay()) * selectedDatesArr.length) | number }}
+                ₹{{ ((totalCash() + totalGpay()) * selectedDates().length) | number }}
               </span>
             </div>
             <div class="stat">
@@ -232,7 +216,7 @@ interface EntryRow {
               <td>
                 @if (!multiDateMode() && row.existingEntry) {
                   <span class="font-semibold">₹{{ row.existingEntry.amount | number }}</span>
-                } @else if (multiDateMode() && row.coveredDates.length === selectedDatesArr.length) {
+                } @else if (multiDateMode() && row.coveredDates.length === selectedDates().length) {
                   <span class="text-sm" style="color:var(--p-text-muted-color)">All dates entered</span>
                 } @else {
                   <p-inputnumber [(ngModel)]="row.amount" [min]="0"
@@ -244,7 +228,7 @@ interface EntryRow {
                 @if (!multiDateMode() && row.existingEntry) {
                   <p-tag [value]="row.existingEntry.mode === 'cash' ? 'Cash' : 'GPay'"
                          [severity]="row.existingEntry.mode === 'cash' ? 'success' : 'info'" />
-                } @else if (multiDateMode() && row.coveredDates.length === selectedDatesArr.length) {
+                } @else if (multiDateMode() && row.coveredDates.length === selectedDates().length) {
                   <!-- all covered, no mode toggle needed -->
                 } @else {
                   <div class="flex gap-2">
@@ -269,10 +253,10 @@ interface EntryRow {
                 <td>
                   @if (row.coveredDates.length === 0) {
                     <p-tag value="All pending" severity="warn" />
-                  } @else if (row.coveredDates.length === selectedDatesArr.length) {
+                  } @else if (row.coveredDates.length === selectedDates().length) {
                     <p-tag value="All entered" severity="success" />
                   } @else {
-                    <p-tag [value]="row.coveredDates.length + '/' + selectedDatesArr.length + ' done'"
+                    <p-tag [value]="row.coveredDates.length + '/' + selectedDates().length + ' done'"
                            severity="info"
                            [pTooltip]="'Already entered: ' + row.coveredDates.join(', ')" />
                   }
@@ -298,7 +282,7 @@ interface EntryRow {
           @for (row of rows(); track row.loan.id) {
             <div class="entry-card"
                  [class.paid]="!multiDateMode() && !!row.existingEntry ||
-                               multiDateMode() && row.coveredDates.length === selectedDatesArr.length">
+                               multiDateMode() && row.coveredDates.length === selectedDates().length">
               <div class="card-header">
                 <div>
                   <div class="card-name">{{ row.loan.customer_name }}</div>
@@ -317,10 +301,10 @@ interface EntryRow {
                   <p-tag [value]="row.existingEntry.mode === 'cash' ? 'Cash' : 'GPay'"
                          [severity]="row.existingEntry.mode === 'cash' ? 'success' : 'info'" />
                 </div>
-              } @else if (multiDateMode() && row.coveredDates.length === selectedDatesArr.length) {
+              } @else if (multiDateMode() && row.coveredDates.length === selectedDates().length) {
                 <div class="flex gap-3 items-center">
                   <p-tag value="All Entered" severity="success" />
-                  <span class="text-sm" style="color:var(--p-text-muted-color)">All {{ selectedDatesArr.length }} dates recorded</span>
+                  <span class="text-sm" style="color:var(--p-text-muted-color)">All {{ selectedDates().length }} dates recorded</span>
                 </div>
               } @else {
                 <div class="card-inputs">
@@ -337,7 +321,7 @@ interface EntryRow {
                 </div>
                 @if (multiDateMode() && row.coveredDates.length > 0) {
                   <div class="mt-2">
-                    <p-tag [value]="row.coveredDates.length + '/' + selectedDatesArr.length + ' dates already entered'"
+                    <p-tag [value]="row.coveredDates.length + '/' + selectedDates().length + ' dates already entered'"
                            severity="info" />
                   </div>
                 }
@@ -362,11 +346,11 @@ interface EntryRow {
               <span class="stat-label">{{ multiDateMode() ? 'Per Day' : 'Total' }}</span>
               <span class="stat-value">₹{{ (totalCash() + totalGpay()) | number }}</span>
             </div>
-            @if (multiDateMode() && selectedDatesArr.length > 1) {
+            @if (multiDateMode() && selectedDates().length > 1) {
               <div class="stat">
-                <span class="stat-label">× {{ selectedDatesArr.length }} days</span>
+                <span class="stat-label">× {{ selectedDates().length }} days</span>
                 <span class="stat-value" style="color:var(--p-primary-color)">
-                  ₹{{ ((totalCash() + totalGpay()) * selectedDatesArr.length) | number }}
+                  ₹{{ ((totalCash() + totalGpay()) * selectedDates().length) | number }}
                 </span>
               </div>
             }
@@ -380,229 +364,32 @@ interface EntryRow {
   `,
 })
 export class DailyEntryComponent {
-  private readonly data = inject(DataService);
-  private readonly bookCtx = inject(BookContextStore);
-  private readonly toastSvc = inject(MessageService);
-  private readonly responsive = inject(ResponsiveService);
-
-  protected readonly loading = signal(false);
-  protected readonly submittingAll = signal(false);
-  protected readonly rows = signal<EntryRow[]>([]);
-  protected readonly isMobile = this.responsive.isMobile;
-  protected readonly multiDateMode = signal(false);
-
-  protected selectedDate: Date = new Date();
-  protected selectedDatesArr: Date[] = [];
-  protected selectedLine: LoanLine | '' = '';
+  protected readonly f = inject(DailyEntryFacade);
+  protected readonly isMobile = inject(ResponsiveService).isMobile;
   protected readonly today = new Date();
 
-  protected readonly lines = signal<Line[]>([]);
+  // Facade state surfaced under the names the template already uses.
+  protected readonly rows = this.f.rows;
+  protected readonly lines = this.f.lines;
+  protected readonly loading = this.f.loading;
+  protected readonly submittingAll = this.f.submittingAll;
+  protected readonly multiDateMode = this.f.multiDateMode;
+  protected readonly selectedDate = this.f.selectedDate;
+  protected readonly selectedDates = this.f.selectedDates;
+  protected readonly selectedLine = this.f.selectedLine;
+  protected readonly totalCash = this.f.totalCash;
+  protected readonly totalGpay = this.f.totalGpay;
+  protected readonly nothingToSubmit = this.f.nothingToSubmit;
+  protected readonly pendingEntryCount = this.f.pendingEntryCount;
 
-  // Single-date totals: pending + existing
-  protected readonly totalCash = computed(() =>
-    this.rows().filter(r => !r.existingEntry && r.mode === 'cash' && (r.amount ?? 0) > 0)
-      .reduce((s, r) => s + (r.amount ?? 0), 0)
-    + this.rows().filter(r => r.existingEntry?.mode === 'cash')
-      .reduce((s, r) => s + (r.existingEntry?.amount ?? 0), 0)
-  );
-
-  protected readonly totalGpay = computed(() =>
-    this.rows().filter(r => !r.existingEntry && r.mode === 'gpay' && (r.amount ?? 0) > 0)
-      .reduce((s, r) => s + (r.amount ?? 0), 0)
-    + this.rows().filter(r => r.existingEntry?.mode === 'gpay')
-      .reduce((s, r) => s + (r.existingEntry?.amount ?? 0), 0)
-  );
-
-  protected readonly dirtyAmount = signal(0);
-  protected onAmountChange(): void { this.dirtyAmount.update(n => n + 1); }
-
-  protected readonly nothingToSubmit = computed(() => {
-    this.dirtyAmount(); // track row.amount mutations (plain props, not signals)
-    if (this.multiDateMode()) {
-      if (!this.selectedDatesArr.length) return true;
-      return this.rows().every(r => !(r.amount && r.amount > 0));
-    }
-    return this.rows().every(r => !!r.existingEntry || !(r.amount && r.amount > 0));
-  });
-
-  /** Total new entries that will be created across all selected dates */
-  protected readonly pendingEntryCount = computed(() => {
-    if (!this.multiDateMode()) return 0;
-    const dates = this.selectedDatesArr.map(d => localDateStr(d));
-    return this.rows()
-      .filter(r => (r.amount ?? 0) > 0)
-      .reduce((count, r) => count + dates.filter(d => !r.coveredDates.includes(d)).length, 0);
-  });
-
-  constructor() {
-    // Active book changed (header picker): reload its lines and reset the grid
-    // so stale rows/line from the previous book don't linger.
-    effect(() => {
-      const bookId = this.bookCtx.bookId();
-      if (!bookId) return;
-      this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
-      this.selectedLine = '';
-      this.rows.set([]);
-    });
-  }
-
-  protected setMode(multi: boolean): void {
-    this.multiDateMode.set(multi);
-    this.rows.set([]);
-    if (multi) this.selectedDatesArr = [];
-    // Reload for the new mode (single → today's entries for the line; multi →
-    // no-op until dates are picked) so we don't show a stale "no loans" message.
-    this.loadRows();
-  }
-
-  protected onDateChange(): void { this.loadRows(); }
-  protected onLineChange(): void { this.loadRows(); }
-  protected onMultiDatesChange(): void { this.loadRows(); }
+  protected setMode(multi: boolean): void { this.f.setMode(multi); }
+  protected onSaveRow(row: EntryRow): void { this.f.saveRow(row); }
+  protected onSubmitAll(): void { this.f.submitAll(); }
+  protected onAmountChange(): void { this.f.markDirty(); }
 
   protected fmtDate(d: Date): string {
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return `${String(d.getDate()).padStart(2,'0')} ${months[d.getMonth()]}`;
-  }
-
-  private loadRows(): void {
-    if (!this.selectedLine) return;
-    if (this.multiDateMode() && !this.selectedDatesArr.length) return;
-    this.loading.set(true);
-    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
-
-    this.data.loans.getAll(bookId).subscribe({
-      next: (loansRes) => {
-        const loans = loansRes.data.filter(l => l.line === this.selectedLine && !l.completed_date);
-
-        if (!this.multiDateMode()) {
-          this.data.dailyEntries.getByDate(bookId, localDateStr(this.selectedDate)).subscribe({
-            next: (entriesRes) => {
-              this.rows.set(loans.map(loan => ({
-                loan, amount: null, mode: 'cash',
-                existingEntry: entriesRes.data.find(e => e.loan_id === loan.id) ?? null,
-                coveredDates: [], saving: false,
-              })));
-              this.loading.set(false);
-            },
-            error: () => this.loading.set(false),
-          });
-        } else {
-          // Multi-date: check coverage for every selected date in parallel
-          const dates = this.selectedDatesArr.map(d => localDateStr(d));
-          const dateChecks: Observable<{ data: DailyEntry[] }>[] =
-            dates.map(d => this.data.dailyEntries.getByDate(bookId, d));
-
-          forkJoin(dateChecks).subscribe({
-            next: (results) => {
-              const coverageMap = new Map<string, string[]>();
-              results.forEach((res, i) => {
-                res.data.forEach(e => {
-                  if (!coverageMap.has(e.loan_id)) coverageMap.set(e.loan_id, []);
-                  coverageMap.get(e.loan_id)!.push(dates[i]);
-                });
-              });
-              this.rows.set(loans.map(loan => ({
-                loan, amount: null, mode: 'cash',
-                existingEntry: null,
-                coveredDates: coverageMap.get(loan.id) ?? [],
-                saving: false,
-              })));
-              this.loading.set(false);
-            },
-            error: () => this.loading.set(false),
-          });
-        }
-      },
-      error: () => this.loading.set(false),
-    });
-  }
-
-  protected onSaveRow(row: EntryRow): void {
-    if (!row.amount || row.amount <= 0) return;
-    row.saving = true;
-    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
-    this.data.dailyEntries.create({
-      book_id: bookId, loan_id: row.loan.id,
-      entry_date: localDateStr(this.selectedDate), amount: row.amount, mode: row.mode,
-    }).subscribe({
-      next: (res) => {
-        row.existingEntry = res.data;
-        row.amount = null;
-        row.saving = false;
-        this.rows.update(r => [...r]);
-        this.toastSvc.add({ severity: 'success', summary: 'Saved', detail: row.loan.customer_name, life: 1500 });
-      },
-      error: () => {
-        row.saving = false;
-        this.rows.update(r => [...r]);
-        this.toastSvc.add({ severity: 'error', summary: 'Save failed', detail: row.loan.customer_name, life: 2500 });
-      },
-    });
-  }
-
-  protected onSubmitAll(): void {
-    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
-
-    if (!this.multiDateMode()) {
-      const pending = this.rows().filter(r => !r.existingEntry && r.amount && r.amount > 0);
-      if (!pending.length) return;
-      this.submittingAll.set(true);
-      this.data.dailyEntries.bulkCreate({
-        book_id: bookId,
-        entry_date: localDateStr(this.selectedDate),
-        entries: pending.map(r => ({ loan_id: r.loan.id, amount: r.amount!, mode: r.mode })),
-      }).subscribe({
-        next: (res) => {
-          res.data.forEach(entry => {
-            const row = this.rows().find(r => r.loan.id === entry.loan_id);
-            if (row) { row.existingEntry = entry; row.amount = null; }
-          });
-          this.rows.update(r => [...r]);
-          this.submittingAll.set(false);
-          this.toastSvc.add({ severity: 'success', summary: 'Submitted', detail: `${pending.length} entries recorded`, life: 2500 });
-        },
-        error: () => {
-          this.submittingAll.set(false);
-          this.toastSvc.add({ severity: 'error', summary: 'Submit failed', detail: 'Please try again', life: 3000 });
-        },
-      });
-    } else {
-      // Multi-date: one bulkCreate per date (skip dates already covered per loan)
-      const rows = this.rows().filter(r => (r.amount ?? 0) > 0);
-      if (!rows.length) return;
-      const dates = this.selectedDatesArr.map(d => localDateStr(d));
-      this.submittingAll.set(true);
-
-      const dateObs: Observable<{ data: DailyEntry[] }>[] = dates.map(dateStr => {
-        const pending = rows.filter(r => !r.coveredDates.includes(dateStr));
-        if (!pending.length) return of({ data: [] });
-        return this.data.dailyEntries.bulkCreate({
-          book_id: bookId, entry_date: dateStr,
-          entries: pending.map(r => ({ loan_id: r.loan.id, amount: r.amount!, mode: r.mode })),
-        });
-      });
-
-      forkJoin(dateObs).subscribe({
-        next: (results) => {
-          const totalCreated = results.reduce((n, r) => n + r.data.length, 0);
-          const skipped = (rows.length * dates.length) - totalCreated;
-          // Mark all dates as covered for submitted rows
-          this.rows.update(rowList => rowList.map(r =>
-            (r.amount ?? 0) > 0 ? { ...r, coveredDates: dates, amount: null } : r
-          ));
-          this.submittingAll.set(false);
-          this.toastSvc.add({
-            severity: 'success', summary: 'Multi-date entries saved',
-            detail: `${totalCreated} entries created across ${dates.length} days${skipped > 0 ? ` (${skipped} skipped – already existed)` : ''}`,
-            life: 4000,
-          });
-        },
-        error: () => {
-          this.submittingAll.set(false);
-          this.toastSvc.add({ severity: 'error', summary: 'Submit failed', detail: 'Please try again', life: 3000 });
-        },
-      });
-    }
   }
 }
 
