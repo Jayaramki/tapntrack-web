@@ -1,4 +1,6 @@
 import { Component, effect, signal, computed, inject } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DatePipe, CurrencyPipe } from '@angular/common';
@@ -172,10 +174,20 @@ export class ExpenseListComponent {
   private  readonly toastSvc   = inject(MessageService);
   private  readonly confirmSvc = inject(ConfirmationService);
 
-  protected readonly loading    = signal(false);
-  private  readonly expenses    = signal<Expense[]>([]);
+  // Expenses + categories for the active book; rxResource auto-cancels a stale
+  // load on book switch. .value is writable for the activate/deactivate toggle.
+  private readonly dataRes = rxResource({
+    params: () => this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID,
+    stream: ({ params: bookId }) => forkJoin([
+      this.data.expenses.getAll(bookId),
+      this.data.expenses.getCategories(bookId),
+    ]).pipe(map(([e, c]) => ({ expenses: e.data, categories: c.data }))),
+    defaultValue: { expenses: [] as Expense[], categories: [] as ExpenseCategoryConfig[] },
+  });
+  protected readonly loading    = this.dataRes.isLoading;
+  private  readonly expenses    = computed(() => this.dataRes.value().expenses);
   protected readonly filtered   = signal<Expense[]>([]);
-  protected readonly categories = signal<ExpenseCategoryConfig[]>([]);
+  protected readonly categories = computed(() => this.dataRes.value().categories);
 
   protected selectedCategory = 'all';
   protected selectedStatus: 'all' | 'active' | 'inactive' = 'all';
@@ -209,27 +221,8 @@ export class ExpenseListComponent {
   }
 
   constructor() {
-    // Reload whenever the active book changes (header picker) or on init.
-    effect(() => {
-      if (this.bookCtx.bookId()) this.load();
-    });
-  }
-
-  private load(): void {
-    this.loading.set(true);
-    const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
-    forkJoin([
-      this.data.expenses.getAll(bookId),
-      this.data.expenses.getCategories(bookId),
-    ]).subscribe({
-      next: ([expRes, catRes]) => {
-        this.expenses.set(expRes.data);
-        this.categories.set(catRes.data);
-        this.applyFilters();
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+    // Re-apply the active filters whenever freshly-loaded expenses arrive.
+    effect(() => { this.expenses(); this.applyFilters(); });
   }
 
   protected applyFilters(): void {
@@ -267,7 +260,7 @@ export class ExpenseListComponent {
   private doToggle(exp: Expense): void {
     this.data.expenses.toggleActive(exp.id).subscribe(res => {
       const updated = res.data;
-      this.expenses.update(list => list.map(e => e.id === updated.id ? updated : e));
+      this.dataRes.value.update(d => ({ ...d, expenses: d.expenses.map(e => e.id === updated.id ? updated : e) }));
       this.applyFilters();
       this.toastSvc.add({
         severity: updated.is_active ? 'success' : 'info',

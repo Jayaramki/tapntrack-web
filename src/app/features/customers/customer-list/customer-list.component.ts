@@ -1,4 +1,6 @@
-import { Component, signal, inject, computed, effect } from '@angular/core';
+import { Component, signal, inject, computed } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { map, of } from 'rxjs';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -111,8 +113,15 @@ export class CustomerListComponent {
   protected readonly responsive = inject(ResponsiveService);
   private readonly bookCtx = inject(BookContextStore);
 
-  protected readonly loading = signal(true);
-  protected readonly customers = signal<Customer[]>([]);
+  // Reloads when the active book changes (super_admin top-bar picker) and
+  // auto-cancels a superseded load; .value is writable for the toggle below.
+  private readonly customersRes = rxResource({
+    params: () => this.bookCtx.bookId(),
+    stream: ({ params }) => params ? this.data.customers.getAll(params).pipe(map(r => r.data)) : of<Customer[]>([]),
+    defaultValue: [],
+  });
+  protected readonly customers = this.customersRes.value;
+  protected readonly loading = this.customersRes.isLoading;
   protected searchTerm = '';
 
   protected readonly filtered = computed(() => {
@@ -121,22 +130,6 @@ export class CustomerListComponent {
       ? this.customers().filter(c => c.name.toLowerCase().includes(q))
       : this.customers();
   });
-
-  constructor() {
-    // Reload whenever the active book changes (super_admin top-bar picker).
-    effect(() => {
-      const bookId = this.bookCtx.bookId();
-      if (!bookId) return;
-      this.loading.set(true);
-      this.data.customers.getAll(bookId).subscribe({
-        next: (res) => {
-          this.customers.set(res.data);
-          this.loading.set(false);
-        },
-        error: () => this.loading.set(false),
-      });
-    });
-  }
 
   protected toggleActive(customer: Customer): void {
     this.data.customers.toggleActive(customer.id).subscribe(res => {

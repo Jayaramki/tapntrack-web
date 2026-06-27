@@ -1,4 +1,6 @@
-import { Component, signal, inject, computed, effect } from '@angular/core';
+import { Component, signal, inject, computed } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { map, of } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatePipe, DecimalPipe, TitleCasePipe } from '@angular/common';
@@ -220,8 +222,15 @@ export class LoanListComponent {
   protected readonly responsive = inject(ResponsiveService);
   private readonly bookCtx = inject(BookContextStore);
 
-  protected readonly loading = signal(true);
-  protected readonly loans = signal<Loan[]>([]);
+  // Loans for the active book; rxResource auto-cancels a stale load when the
+  // book changes. .value is writable so archive/delete can update optimistically.
+  private readonly loansRes = rxResource({
+    params: () => this.bookCtx.bookId(),
+    stream: ({ params }) => params ? this.data.loans.getAll(params).pipe(map(r => r.data)) : of<Loan[]>([]),
+    defaultValue: [],
+  });
+  protected readonly loans = this.loansRes.value;
+  protected readonly loading = this.loansRes.isLoading;
   // Balance column hidden for a field agent whose book has AGENT_SHOW_BALANCE off.
   protected readonly showBalance = AuthStore.showBalance;
   protected readonly searchText = signal('');
@@ -236,7 +245,12 @@ export class LoanListComponent {
     { label: 'Weekly', value: 'weekly' },
     { label: 'Monthly', value: 'monthly' },
   ];
-  protected readonly lines = signal<Line[]>([]);
+  private readonly linesRes = rxResource({
+    params: () => this.bookCtx.bookId(),
+    stream: ({ params }) => params ? this.data.lines.getAll(params).pipe(map(r => r.data)) : of<Line[]>([]),
+    defaultValue: [],
+  });
+  protected readonly lines = this.linesRes.value;
   protected readonly statusOptions = [
     { label: 'Active', value: 'active' },
     { label: 'Completed', value: 'completed' },
@@ -270,25 +284,6 @@ export class LoanListComponent {
     const start = this.mobilePage() * this.mobilePageSize;
     return this.filtered().slice(start, start + this.mobilePageSize);
   });
-
-  constructor() {
-    effect(() => {
-      const bookId = this.bookCtx.bookId();
-      if (bookId) this.loadLoans(bookId);
-    });
-  }
-
-  private loadLoans(bookId: string): void {
-    this.loading.set(true);
-    this.data.loans.getAll(bookId).subscribe({
-      next: (r) => {
-        this.loans.set(r.data);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
-    this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
-  }
 
   protected typeSeverity(type: string): 'info' | 'success' | 'warn' {
     return type === 'daily' ? 'info' : type === 'weekly' ? 'success' : 'warn';

@@ -1,4 +1,6 @@
-import { Component, signal, inject, computed, effect } from '@angular/core';
+import { Component, signal, inject, computed } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { map, of } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatePipe, DecimalPipe, TitleCasePipe } from '@angular/common';
@@ -104,8 +106,15 @@ export class LoanArchivedComponent {
 
   private readonly bookCtx = inject(BookContextStore);
 
-  protected readonly loading = signal(true);
-  protected readonly loans = signal<ArchiveLoan[]>([]);
+  // rxResource auto-cancels a stale load on book switch; .value is writable so
+  // unarchive/permanent-delete can drop a row optimistically.
+  private readonly loansRes = rxResource({
+    params: () => this.bookCtx.bookId(),
+    stream: ({ params }) => params ? this.data.loans.getArchived(params).pipe(map(r => r.data)) : of<ArchiveLoan[]>([]),
+    defaultValue: [],
+  });
+  protected readonly loans = this.loansRes.value;
+  protected readonly loading = this.loansRes.isLoading;
   protected readonly searchText = signal('');
 
   protected readonly filtered = computed(() => {
@@ -115,24 +124,6 @@ export class LoanArchivedComponent {
         || (l.customer_name ?? '').toLowerCase().includes(s)
     );
   });
-
-  constructor() {
-    effect(() => {
-      const bookId = this.bookCtx.bookId();
-      if (bookId) this.loadLoans(bookId);
-    });
-  }
-
-  private loadLoans(bookId: string): void {
-    this.loading.set(true);
-    this.data.loans.getArchived(bookId).subscribe({
-      next: (r) => {
-        this.loans.set(r.data);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
-  }
 
   protected typeSeverity(type: string): 'info' | 'success' | 'warn' {
     return type === 'daily' ? 'info' : type === 'weekly' ? 'success' : 'warn';

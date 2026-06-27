@@ -1,4 +1,6 @@
-import { Component, signal, inject, computed, effect } from '@angular/core';
+import { Component, signal, inject, computed } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { map, of } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe, NgTemplateOutlet, TitleCasePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -226,8 +228,14 @@ export class PendingLoansComponent {
 
   private readonly bookCtx = inject(BookContextStore);
 
-  protected readonly loading = signal(true);
-  protected readonly allPending = signal<PendingLoan[]>([]);
+  // rxResource auto-cancels a stale load when the active book changes.
+  private readonly pendingRes = rxResource({
+    params: () => this.bookCtx.bookId(),
+    stream: ({ params }) => params ? this.data.loans.getPending(params).pipe(map(r => r.data)) : of<PendingLoan[]>([]),
+    defaultValue: [],
+  });
+  protected readonly allPending = this.pendingRes.value;
+  protected readonly loading = this.pendingRes.isLoading;
   // Balance column hidden for a field agent whose book has AGENT_SHOW_BALANCE off.
   protected readonly showBalance = AuthStore.showBalance;
   protected readonly activeTab = signal<string>('daily');
@@ -245,7 +253,12 @@ export class PendingLoansComponent {
     return loans.slice(start, start + this.mobilePageSize);
   }
 
-  protected readonly lines = signal<Line[]>([]);
+  private readonly linesRes = rxResource({
+    params: () => this.bookCtx.bookId(),
+    stream: ({ params }) => params ? this.data.lines.getAll(params).pipe(map(r => r.data)) : of<Line[]>([]),
+    defaultValue: [],
+  });
+  protected readonly lines = this.linesRes.value;
 
   protected readonly activeTabLoans = computed(() => {
     const type = this.activeTab();
@@ -269,22 +282,4 @@ export class PendingLoansComponent {
     return '';
   }
 
-  constructor() {
-    effect(() => {
-      const bookId = this.bookCtx.bookId();
-      if (bookId) this.loadPending(bookId);
-    });
-  }
-
-  private loadPending(bookId: string): void {
-    this.loading.set(true);
-    this.data.loans.getPending(bookId).subscribe({
-      next: (r) => {
-        this.allPending.set(r.data);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
-    this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
-  }
 }
