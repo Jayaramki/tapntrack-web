@@ -1,4 +1,6 @@
 ﻿import { Component, signal, inject, effect, computed } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { map, of } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
@@ -160,7 +162,14 @@ export class LedgerComponent {
 
   protected readonly monthOptions = MONTH_NAMES.map((label, i) => ({ label, value: i + 1 }));
 
-  protected readonly lines = signal<Line[]>([]);
+  // Line list for the filter; rxResource reloads/cancels on book switch. (The
+  // ledger grid data itself stays imperative — it drives AG-Grid in-place.)
+  private readonly linesRes = rxResource({
+    params: () => this.bookCtx.bookId(),
+    stream: ({ params }) => params ? this.data.lines.getAll(params).pipe(map(r => r.data)) : of<Line[]>([]),
+    defaultValue: [],
+  });
+  protected readonly lines = this.linesRes.value;
   protected readonly lineOptions = computed(() => [
     { label: 'All Lines', value: 'all' },
     ...this.lines().map(l => ({ label: l.name, value: l.name })),
@@ -180,7 +189,6 @@ export class LedgerComponent {
   protected loadLedger(): void {
     this.loading.set(true);
     const bookId = this.bookCtx.bookId() ?? AuthStore.DEFAULT_BOOK_ID;
-    this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
     this.data.ledger.getLedger(bookId, this.selectedYear, this.selectedMonth).subscribe({
       next: (res) => {
         this.ledgerData.set(res.data);

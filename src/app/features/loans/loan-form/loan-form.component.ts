@@ -2,7 +2,8 @@ import { Component, signal, inject, OnInit, computed, DestroyRef, ChangeDetector
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, rxResource } from '@angular/core/rxjs-interop';
+import { map, of } from 'rxjs';
 import { DecimalPipe } from '@angular/common';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -211,7 +212,15 @@ export class LoanFormComponent implements OnInit {
   protected readonly saving = signal(false);
   protected readonly loadError = signal<string | null>(null);
   protected readonly loanId = signal<string | null>(null);
-  protected readonly allCustomers = signal<Customer[]>([]);
+  // Reference data for the form's book (active book, or the edited loan's book);
+  // rxResource auto-cancels a superseded load when formBookId changes.
+  private readonly formBookId = signal<string | null>(null);
+  private readonly customersRes = rxResource({
+    params: () => this.formBookId(),
+    stream: ({ params }) => params ? this.data.customers.getAll(params).pipe(map(r => r.data)) : of<Customer[]>([]),
+    defaultValue: [],
+  });
+  protected readonly allCustomers = this.customersRes.value;
   protected readonly customerSuggestions = signal<Customer[]>([]);
   protected readonly autocompleteCustomer = signal<Customer | null>(null);
   protected readonly today = new Date();
@@ -236,7 +245,12 @@ export class LoanFormComponent implements OnInit {
     { label: 'Weekly', value: 'weekly' },
     { label: 'Monthly', value: 'monthly' },
   ];
-  protected readonly lines = signal<Line[]>([]);
+  private readonly linesRes = rxResource({
+    params: () => this.formBookId(),
+    stream: ({ params }) => params ? this.data.lines.getAll(params).pipe(map(r => r.data)) : of<Line[]>([]),
+    defaultValue: [],
+  });
+  protected readonly lines = this.linesRes.value;
 
   protected readonly form = this.fb.group({
     book_id:         [this.bookCtx.bookId() ?? '', Validators.required],
@@ -258,7 +272,7 @@ export class LoanFormComponent implements OnInit {
 
     const bookId = this.bookCtx.bookId();
     this.form.patchValue({ book_id: bookId ?? '' });
-    if (bookId) this.loadCustomers(bookId);
+    if (bookId) this.formBookId.set(bookId);
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -277,7 +291,7 @@ export class LoanFormComponent implements OnInit {
             issued_date: new Date(l.issued_date),
           });
           // Load this loan's book customers for the autocomplete suggestions
-          this.loadCustomers(l.book_id);
+          this.formBookId.set(l.book_id);
           // Resolve customer name for display
           this.data.customers.getById(l.customer_id).subscribe(cr => {
             this.autocompleteCustomer.set(cr.data);
@@ -321,11 +335,6 @@ export class LoanFormComponent implements OnInit {
       },
       error: () => {},
     });
-  }
-
-  private loadCustomers(bookId: string): void {
-    this.data.customers.getAll(bookId).subscribe(r => this.allCustomers.set(r.data));
-    this.data.lines.getAll(bookId).subscribe(r => this.lines.set(r.data));
   }
 
   protected searchCustomers(event: { query: string }): void {
