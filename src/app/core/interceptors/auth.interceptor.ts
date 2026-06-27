@@ -24,7 +24,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401) {
         AuthStore.clear();
-        router.navigate(['/login']);
+        // Redirect once; concurrent 401s (and the startup check) won't stack
+        // history or re-trigger navigation when already heading to login.
+        if (!router.url.startsWith('/login')) {
+          router.navigateByUrl('/login', { replaceUrl: true });
+        }
       }
       return throwError(() => error);
     })

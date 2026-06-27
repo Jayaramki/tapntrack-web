@@ -20,7 +20,14 @@
     <link rel="manifest" href="manifest.webmanifest" />
   </head>
   <body>
-    <app-root></app-root>
+    <app-root>
+      <!-- Boot splash: shown while the app bootstraps and validates the saved
+           session (auth/me); Angular replaces this when <app-root> renders. -->
+      <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#ffffff">
+        <div style="width:42px;height:42px;border:4px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:tnt-boot-spin .8s linear infinite"></div>
+      </div>
+      <style>@keyframes tnt-boot-spin{to{transform:rotate(360deg)}}</style>
+    </app-root>
     <noscript>Please enable JavaScript to continue using this application.</noscript>
   </body>
 </html>

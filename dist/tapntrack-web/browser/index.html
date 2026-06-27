@@ -20,7 +20,14 @@
     <link rel="manifest" href="manifest.webmanifest">
   <style>@-webkit-keyframes fa-spin{0%{-webkit-transform:rotate(0deg);transform:rotate(0)}to{-webkit-transform:rotate(359deg);transform:rotate(359deg)}}@layer theme,base,components,utilities;@layer theme{@theme default}@theme default inline reference{--blur:8px;--shadow:0 1px 3px 0 rgb(0 0 0 / .1), 0 1px 2px -1px rgb(0 0 0 / .1);--shadow-inner:inset 0 2px 4px 0 rgb(0 0 0 / .05);--drop-shadow:0 1px 2px rgb(0 0 0 / .1), 0 1px 1px rgb(0 0 0 / .06);--radius:.25rem;--max-width-prose:65ch}}@layer base{*,:after,:before{box-sizing:border-box;margin:0;padding:0;border:0 solid}html{line-height:1.5;-webkit-text-size-adjust:100%;tab-size:4;font-family:--theme(--default-font-family,ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji");font-feature-settings:--theme(--default-font-feature-settings,normal);font-variation-settings:--theme(--default-font-variation-settings,normal);-webkit-tap-highlight-color:transparent}@layer utilities{}*,*:before,*:after{box-sizing:border-box}html,body{height:100%;margin:0;font-family:var(--p-font-family, system-ui, sans-serif);background-color:var(--p-surface-ground);color:var(--p-text-color)}</style><link rel="stylesheet" href="styles-BK3MSPYR.css" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="styles-BK3MSPYR.css"></noscript></head>
   <body>
-    <app-root></app-root>
+    <app-root>
+      <!-- Boot splash: shown while the app bootstraps and validates the saved
+           session (auth/me); Angular replaces this when <app-root> renders. -->
+      <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#ffffff">
+        <div style="width:42px;height:42px;border:4px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:tnt-boot-spin .8s linear infinite"></div>
+      </div>
+      <style>@keyframes tnt-boot-spin{to{transform:rotate(360deg)}}</style>
+    </app-root>
     <noscript>Please enable JavaScript to continue using this application.</noscript>
-  <link rel="modulepreload" href="chunk-56OAAWV2.js"><link rel="modulepreload" href="chunk-ABJLFTSQ.js"><link rel="modulepreload" href="chunk-GLMBC4QX.js"><link rel="modulepreload" href="chunk-LGRCXA7A.js"><link rel="modulepreload" href="chunk-TRPD6FQK.js"><link rel="modulepreload" href="chunk-Q2HF4I2W.js"><link rel="modulepreload" href="chunk-62USAGYN.js"><script src="main-YLF4NX2U.js" type="module"></script></body>
+  <link rel="modulepreload" href="chunk-56OAAWV2.js"><link rel="modulepreload" href="chunk-6BLOBGV7.js"><link rel="modulepreload" href="chunk-C6JVNQVQ.js"><link rel="modulepreload" href="chunk-MSVHUWFE.js"><link rel="modulepreload" href="chunk-E5K6ZNJR.js"><link rel="modulepreload" href="chunk-54KBNMB3.js"><link rel="modulepreload" href="chunk-DXC4ZM5Y.js"><link rel="modulepreload" href="chunk-7QM6MCS2.js"><script src="main-SJI35HIE.js" type="module"></script></body>
 </html>
