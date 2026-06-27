@@ -3,6 +3,8 @@ import { ApiResponse, PaginatedResponse } from '../models/api-response.model';
 import { AuthUser, RegisterPayload } from '../models/user.model';
 
 export abstract class BaseAuthService {
+  /** Prime the CSRF cookie (Sanctum SPA) before any mutating/auth request. */
+  abstract csrf(): Observable<unknown>;
   abstract login(username: string, password: string, tenantSlug?: string | null): Observable<ApiResponse<AuthUser>>;
   abstract register(payload: RegisterPayload): Observable<ApiResponse<AuthUser>>;
   abstract logout(): Observable<ApiResponse<null>>;

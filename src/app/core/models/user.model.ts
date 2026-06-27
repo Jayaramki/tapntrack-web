@@ -16,7 +16,7 @@ export interface AuthUser extends User {
   tenant_slug?: string | null;
   hide_balance?: boolean;
   permissions: string[];
-  token: string;
+  // No token field: auth is an httpOnly session cookie (Sanctum SPA), never in JS.
 }
 
 /** Self-signup payload — creates a tenant + its first tenant_admin + starter book. */

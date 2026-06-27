@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
 import { AuthUser, RegisterPayload } from '../models/user.model';
@@ -9,21 +9,32 @@ import { BaseAuthService } from './base-auth.service';
 @Injectable({ providedIn: 'root' })
 export class HttpAuthService extends BaseAuthService {
   private readonly authUrl = `${environment.apiUrl}/auth`;
+  // /sanctum/csrf-cookie sits at the API root, not under /v1.
+  private readonly csrfUrl = `${environment.apiUrl.replace(/\/v1\/?$/, '')}/sanctum/csrf-cookie`;
 
   constructor(private readonly http: HttpClient) {
     super();
   }
 
+  csrf(): Observable<unknown> {
+    return this.http.get(this.csrfUrl, { responseType: 'text' });
+  }
+
   login(username: string, password: string, tenantSlug?: string | null): Observable<ApiResponse<AuthUser>> {
-    return this.http.post<ApiResponse<AuthUser>>(`${this.authUrl}/login`, {
-      username,
-      password,
-      ...(tenantSlug ? { tenant_slug: tenantSlug } : {}),
-    });
+    // Prime the CSRF cookie, then authenticate (session-cookie login).
+    return this.csrf().pipe(switchMap(() =>
+      this.http.post<ApiResponse<AuthUser>>(`${this.authUrl}/login`, {
+        username,
+        password,
+        ...(tenantSlug ? { tenant_slug: tenantSlug } : {}),
+      })
+    ));
   }
 
   register(payload: RegisterPayload): Observable<ApiResponse<AuthUser>> {
-    return this.http.post<ApiResponse<AuthUser>>(`${this.authUrl}/register`, payload);
+    return this.csrf().pipe(switchMap(() =>
+      this.http.post<ApiResponse<AuthUser>>(`${this.authUrl}/register`, payload)
+    ));
   }
 
   logout(): Observable<ApiResponse<null>> {

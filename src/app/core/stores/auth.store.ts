@@ -12,7 +12,6 @@ export const AuthStore = {
   isAuthenticated: computed(() => !!_authUser()),
   role: computed(() => _authUser()?.role ?? null),
   bookId: computed(() => _authUser()?.book_id ?? null),
-  token: computed(() => _authUser()?.token ?? null),
   tenantId: computed(() => _authUser()?.tenant_id ?? null),
   tenantSlug: computed(() => _authUser()?.tenant_slug ?? null),
   /** Field agent whose book hides loan balances. */
@@ -41,29 +40,15 @@ export const AuthStore = {
   },
 
   setUser(user: AuthUser): void {
+    // The session lives in an httpOnly cookie; only the (non-sensitive) profile is
+    // held in memory, rehydrated from /auth/me on load. Nothing sensitive in storage.
     _authUser.set(user);
-    localStorage.setItem('auth_token', user.token);
-    localStorage.setItem('auth_user', JSON.stringify(user));
-    // Remember the workspace so the login form can prefill it next time.
     if (user.tenant_slug) {
       localStorage.setItem('tenant_slug', user.tenant_slug);
     }
   },
 
-  loadFromStorage(): void {
-    const stored = localStorage.getItem('auth_user');
-    if (stored) {
-      try {
-        _authUser.set(JSON.parse(stored));
-      } catch {
-        _authUser.set(null);
-      }
-    }
-  },
-
   clear(): void {
     _authUser.set(null);
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
   },
 };
