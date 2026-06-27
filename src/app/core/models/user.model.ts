@@ -8,6 +8,7 @@ export interface User {
   username: string;
   role: UserRole;
   phone?: string;
+  email?: string | null;
   is_active: boolean;
 }
 

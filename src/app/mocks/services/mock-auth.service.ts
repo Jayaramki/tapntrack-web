@@ -59,21 +59,12 @@ export class MockAuthService extends BaseAuthService {
     return of({ success: true, data: authUser }).pipe(delay(200));
   }
 
-  getSecurityQuestion(username: string): Observable<ApiResponse<{ question: string }>> {
-    const user = MOCK_USERS.find(u => u.username === username);
-    if (!user) {
-      return throwError(() => ({ status: 404, error: { message: 'Username not found' } })).pipe(delay(300));
-    }
-    return of({ success: true, data: { question: user.security_question } }).pipe(delay(300));
+  forgotPassword(_email: string): Observable<ApiResponse<null>> {
+    return of({ success: true, data: null, message: 'If that email is registered, a reset link has been sent.' }).pipe(delay(400));
   }
 
-  forgotPassword(username: string, answer: string, newPassword: string): Observable<ApiResponse<null>> {
-    const user = MOCK_USERS.find(u => u.username === username);
-    if (!user || user.security_answer !== answer.toLowerCase()) {
-      return throwError(() => ({ status: 400, error: { message: 'Security answer is incorrect' } })).pipe(delay(300));
-    }
-    user.password = newPassword;
-    return of({ success: true, data: null, message: 'Password reset successful' }).pipe(delay(400));
+  resetPassword(_token: string, _email: string, _password: string): Observable<ApiResponse<null>> {
+    return of({ success: true, data: null, message: 'Your password has been reset.' }).pipe(delay(400));
   }
 
   changePassword(current: string, newPass: string): Observable<ApiResponse<null>> {

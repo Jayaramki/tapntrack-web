@@ -9,7 +9,9 @@ export abstract class BaseAuthService {
   abstract register(payload: RegisterPayload): Observable<ApiResponse<AuthUser>>;
   abstract logout(): Observable<ApiResponse<null>>;
   abstract me(): Observable<ApiResponse<AuthUser>>;
-  abstract forgotPassword(username: string, answer: string, newPassword: string, tenantSlug?: string | null): Observable<ApiResponse<null>>;
-  abstract getSecurityQuestion(username: string, tenantSlug?: string | null): Observable<ApiResponse<{ question: string }>>;
+  /** Email a single-use reset link (always succeeds — no account enumeration). */
+  abstract forgotPassword(email: string): Observable<ApiResponse<null>>;
+  /** Consume an emailed token and set a new password. */
+  abstract resetPassword(token: string, email: string, password: string): Observable<ApiResponse<null>>;
   abstract changePassword(current: string, newPass: string): Observable<ApiResponse<null>>;
 }

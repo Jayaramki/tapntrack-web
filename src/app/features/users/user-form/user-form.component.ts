@@ -24,6 +24,15 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
   return null;
 }
 
+/** Empty is allowed (edit = keep current); a provided value must match the
+ *  backend policy (min 10, mixed case, number, symbol). */
+function strongOrEmpty(c: AbstractControl): ValidationErrors | null {
+  const v = c.value as string;
+  if (!v) return null;
+  const ok = v.length >= 10 && /[a-z]/.test(v) && /[A-Z]/.test(v) && /\d/.test(v) && /[^A-Za-z0-9]/.test(v);
+  return ok ? null : { weakPassword: true };
+}
+
 @Component({
   selector: 'app-user-form',
   standalone: true,
@@ -101,6 +110,13 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
                      class="w-full" />
             </div>
 
+            <div class="field">
+              <label>Email <span style="font-weight:400;color:var(--p-text-muted-color)">(for password reset)</span></label>
+              <input pInputText type="email" formControlName="email" placeholder="user@example.com"
+                     class="w-full" [class.ng-invalid]="isInvalid('email')" />
+              @if (isInvalid('email')) { <div class="field-error">Enter a valid email.</div> }
+            </div>
+
             <!-- Account -->
             <div class="section-title">Account</div>
 
@@ -135,16 +151,20 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
               </div>
             }
 
-            @if (!isEdit()) {
-              <div class="section-title">Password</div>
-              <div class="field">
-                <label>Password <span style="color:var(--p-red-500)">*</span></label>
-                <p-password formControlName="password" placeholder="Min. 6 characters"
-                            [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full" />
-                @if (isInvalid('password')) {
-                  <div class="field-error">Minimum 6 characters.</div>
-                }
-              </div>
+            <div class="section-title">{{ isEdit() ? 'Reset Password (optional)' : 'Password' }}</div>
+            <div class="field">
+              <label>
+                @if (isEdit()) { New Password } @else { Password <span style="color:var(--p-red-500)">*</span> }
+              </label>
+              <p-password formControlName="password"
+                          [placeholder]="isEdit() ? 'Leave blank to keep current' : 'Strong password'"
+                          [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full" />
+              <div class="field-error" style="color:var(--p-text-muted-color)">Min 10 chars, upper &amp; lower, number, symbol.</div>
+              @if (isInvalid('password')) {
+                <div class="field-error">Password doesn't meet the requirements.</div>
+              }
+            </div>
+            @if (!isEdit() || form.get('password')?.value) {
               <div class="field">
                 <label>Confirm Password <span style="color:var(--p-red-500)">*</span></label>
                 <p-password formControlName="confirmPassword" placeholder="Repeat password"
@@ -155,29 +175,6 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
                 }
               </div>
             }
-
-            <!-- Security -->
-            <div class="section-title">Security Question</div>
-
-            <div class="field full-width">
-              <label>Security Question <span style="color:var(--p-red-500)">*</span></label>
-              <input pInputText formControlName="security_question"
-                     placeholder="e.g. What is your pet name?"
-                     class="w-full" [class.ng-invalid]="isInvalid('security_question')" />
-              @if (isInvalid('security_question')) {
-                <div class="field-error">Security question is required.</div>
-              }
-            </div>
-
-            <div class="field full-width">
-              <label>Security Answer <span style="color:var(--p-red-500)">*</span></label>
-              <input pInputText formControlName="security_answer"
-                     placeholder="Your answer (stored securely)"
-                     class="w-full" [class.ng-invalid]="isInvalid('security_answer')" />
-              @if (isInvalid('security_answer')) {
-                <div class="field-error">Security answer is required.</div>
-              }
-            </div>
           </div>
 
           <div class="form-actions">
@@ -241,10 +238,9 @@ export class UserFormComponent implements OnInit {
     role:       ['', Validators.required],
     book_id:    [null as string | null],
     phone:      [''],
+    email:      ['', [Validators.email]],
     password:   [''],
     confirmPassword: [''],
-    security_question: ['', Validators.required],
-    security_answer:   ['', Validators.required],
   }, { validators: passwordMatchValidator });
 
   ngOnInit(): void {
@@ -258,8 +254,8 @@ export class UserFormComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.userId.set(id);
-      // Password not required on edit
-      this.form.get('password')?.clearValidators();
+      // Edit: password optional (blank = keep current), but strong if provided.
+      this.form.get('password')?.setValidators([strongOrEmpty]);
       this.form.get('confirmPassword')?.clearValidators();
       this.data.users.getById(id).subscribe({
         next: (res) => {
@@ -267,14 +263,14 @@ export class UserFormComponent implements OnInit {
           this.form.patchValue({
             first_name: u.first_name, last_name: u.last_name,
             username: u.username, role: u.role,
-            book_id: u.book_id, phone: u.phone ?? '',
+            book_id: u.book_id, phone: u.phone ?? '', email: u.email ?? '',
           });
           this.selectedRole.set(u.role);
         },
         error: () => this.loadError.set('User not found.'),
       });
     } else {
-      this.form.get('password')?.setValidators([Validators.required, Validators.minLength(6)]);
+      this.form.get('password')?.setValidators([Validators.required, strongOrEmpty]);
       this.form.get('confirmPassword')?.setValidators(Validators.required);
     }
     // Pre-fill book for BookAdmin
@@ -296,9 +292,10 @@ export class UserFormComponent implements OnInit {
       first_name: v.first_name!, last_name: v.last_name!,
       username: v.username!, role: v.role!,
       book_id: v.book_id ?? null, phone: v.phone || undefined,
-      security_question: v.security_question!, security_answer: v.security_answer!,
+      email: v.email || undefined,
     };
-    if (!this.isEdit()) payload.password = v.password;
+    // Password on create, or on edit only when an admin enters a new one.
+    if (v.password) payload.password = v.password;
 
     const req$ = this.isEdit()
       ? this.data.users.update(this.userId()!, payload)

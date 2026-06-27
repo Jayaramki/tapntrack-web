@@ -45,19 +45,16 @@ export class HttpAuthService extends BaseAuthService {
     return this.http.get<ApiResponse<AuthUser>>(`${this.authUrl}/me`);
   }
 
-  getSecurityQuestion(username: string, tenantSlug?: string | null): Observable<ApiResponse<{ question: string }>> {
-    return this.http.get<ApiResponse<{ question: string }>>(`${this.authUrl}/security-question`, {
-      params: { username, ...(tenantSlug ? { tenant_slug: tenantSlug } : {}) },
-    });
+  forgotPassword(email: string): Observable<ApiResponse<null>> {
+    return this.csrf().pipe(switchMap(() =>
+      this.http.post<ApiResponse<null>>(`${this.authUrl}/forgot-password`, { email })
+    ));
   }
 
-  forgotPassword(username: string, answer: string, newPassword: string, tenantSlug?: string | null): Observable<ApiResponse<null>> {
-    return this.http.post<ApiResponse<null>>(`${this.authUrl}/forgot-password`, {
-      username,
-      answer,
-      new_password: newPassword,
-      ...(tenantSlug ? { tenant_slug: tenantSlug } : {}),
-    });
+  resetPassword(token: string, email: string, password: string): Observable<ApiResponse<null>> {
+    return this.csrf().pipe(switchMap(() =>
+      this.http.post<ApiResponse<null>>(`${this.authUrl}/reset-password`, { token, email, password })
+    ));
   }
 
   changePassword(current: string, newPass: string): Observable<ApiResponse<null>> {
