@@ -1,5 +1,6 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, signal, inject, OnDestroy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from './sidebar.component';
 import { TopbarComponent } from './topbar.component';
 import { ResponsiveService } from '../core/services/responsive.service';
@@ -9,13 +10,18 @@ import { ImpersonationStore } from '../core/stores/impersonation.store';
 import { SubscriptionStore } from '../core/stores/subscription.store';
 import { AuthStore } from '../core/stores/auth.store';
 import { DataService } from '../core/services/data.service';
+import { IdleService } from '../core/services/idle.service';
 import { ToastModule } from 'primeng/toast';
+import { DialogModule } from 'primeng/dialog';
+import { ButtonModule } from 'primeng/button';
+import { PasswordModule } from 'primeng/password';
 import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, TopbarComponent, InstallBannerComponent, SwUpdateComponent, ToastModule],
+  imports: [RouterOutlet, FormsModule, SidebarComponent, TopbarComponent, InstallBannerComponent,
+            SwUpdateComponent, ToastModule, DialogModule, ButtonModule, PasswordModule],
   providers: [MessageService],
   styles: [`
     :host { display: contents; }
@@ -123,13 +129,46 @@ import { MessageService } from 'primeng/api';
         <app-sidebar [drawerOpen]="mobileDrawerOpen()" (drawerClose)="mobileDrawerOpen.set(false)" />
       }
       <app-install-banner />
+
+      <!-- Idle warning: a click keeps the session alive -->
+      <p-dialog [visible]="idle.idleWarn()" [modal]="true" [closable]="false" [draggable]="false"
+                header="Still there?" [style]="{ width: '380px' }">
+        <p style="margin:0">You'll be signed out in <strong>{{ idle.countdown() }}s</strong> due to inactivity.</p>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+          <p-button label="Log out" severity="secondary" [text]="true" (onClick)="idle.logoutNow()" />
+          <p-button label="Stay signed in" icon="pi pi-check" (onClick)="idle.stayActive()" />
+        </div>
+      </p-dialog>
+
+      <!-- Absolute timeout: only the real user (password) can renew -->
+      <p-dialog [visible]="idle.reauthWarn()" [modal]="true" [closable]="false" [draggable]="false"
+                header="Confirm it's you" [style]="{ width: '410px' }">
+        <p style="margin:0 0 12px">For your security, re-enter your password to keep working.
+          Signing out in <strong>{{ idle.countdown() }}s</strong>.</p>
+        <p-password [(ngModel)]="reauthPassword" [feedback]="false" [toggleMask]="true"
+                    styleClass="w-full" inputStyleClass="w-full" placeholder="Your password"
+                    (keyup.enter)="onReauth()" />
+        @if (reauthError()) {
+          <div style="color:var(--p-red-500);font-size:0.8rem;margin-top:6px">{{ reauthError() }}</div>
+        }
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+          <p-button label="Log out" severity="secondary" [text]="true" (onClick)="idle.logoutNow()" />
+          <p-button label="Continue" icon="pi pi-lock-open" [loading]="reauthBusy()"
+                    [disabled]="!reauthPassword" (onClick)="onReauth()" />
+        </div>
+      </p-dialog>
     </div>
   `,
 })
-export class LayoutComponent {
+export class LayoutComponent implements OnDestroy {
   protected readonly responsive = inject(ResponsiveService);
   private readonly admin = inject(DataService).admin;
   private readonly subscription = inject(SubscriptionStore);
+  protected readonly idle = inject(IdleService);
+
+  protected reauthPassword = '';
+  protected readonly reauthError = signal<string | null>(null);
+  protected readonly reauthBusy = signal(false);
 
   protected readonly impersonating = ImpersonationStore.isActive;
   protected readonly impersonatingName = ImpersonationStore.name;
@@ -142,6 +181,29 @@ export class LayoutComponent {
     if (AuthStore.role() !== 'super_admin' || ImpersonationStore.isActive()) {
       this.subscription.load();
     }
+    // Idle + absolute session warnings run only inside the authenticated shell.
+    this.idle.start();
+  }
+
+  ngOnDestroy(): void {
+    this.idle.stop();
+  }
+
+  protected onReauth(): void {
+    if (!this.reauthPassword || this.reauthBusy()) return;
+    this.reauthBusy.set(true);
+    this.reauthError.set(null);
+    this.idle.reauth(this.reauthPassword).subscribe({
+      next: (res) => {
+        this.idle.onReauthed(res.data.absolute_expires_at);
+        this.reauthPassword = '';
+        this.reauthBusy.set(false);
+      },
+      error: (err) => {
+        this.reauthBusy.set(false);
+        this.reauthError.set(err?.status === 422 ? 'Incorrect password. Try again.' : 'Could not verify — please try again.');
+      },
+    });
   }
 
   protected exitImpersonation(): void {

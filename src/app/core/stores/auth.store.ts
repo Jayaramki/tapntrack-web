@@ -20,6 +20,19 @@ export const AuthStore = {
   showBalance: computed(() => !(_authUser()?.hide_balance ?? false)),
   permissions: computed(() => _authUser()?.permissions ?? []),
 
+  /** Session policy for the idle/absolute warning timers. */
+  idleTimeoutMinutes: computed(() => _authUser()?.idle_timeout_minutes ?? 60),
+  /** Absolute (hard) logout deadline in epoch ms, or null. */
+  absoluteExpiresAt: computed(() => {
+    const iso = _authUser()?.absolute_expires_at;
+    return iso ? Date.parse(iso) : null;
+  }),
+
+  /** After a successful re-auth: push the new absolute deadline into the user. */
+  extendAbsolute(absoluteExpiresAt: string): void {
+    _authUser.update(u => (u ? { ...u, absolute_expires_at: absoluteExpiresAt } : u));
+  },
+
   /** Last workspace slug used, for prefilling the login form (survives logout). */
   lastTenantSlug(): string | null {
     return localStorage.getItem('tenant_slug');

@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { delay } from 'rxjs/operators';
 import { ApiResponse } from '../../core/models/api-response.model';
-import { AuthUser, RegisterPayload } from '../../core/models/user.model';
-import { BaseAuthService } from '../../core/services/base-auth.service';
+import { AuthUser, RegisterPayload, DeviceSession } from '../../core/models/user.model';
+import { BaseAuthService, SessionMeta } from '../../core/services/base-auth.service';
 import { MOCK_USERS } from '../data/users.mock';
 
 @Injectable({ providedIn: 'root' })
@@ -69,5 +69,25 @@ export class MockAuthService extends BaseAuthService {
 
   changePassword(current: string, newPass: string): Observable<ApiResponse<null>> {
     return of({ success: true, data: null, message: 'Password changed successfully' }).pipe(delay(300));
+  }
+
+  reauth(_password: string): Observable<ApiResponse<SessionMeta>> {
+    return of({ success: true, data: { idle_timeout_minutes: 60, absolute_expires_at: new Date(Date.now() + 12 * 3600_000).toISOString() } }).pipe(delay(300));
+  }
+
+  sessions(): Observable<ApiResponse<DeviceSession[]>> {
+    const data: DeviceSession[] = [
+      { id: 'mock-current', device: 'Chrome on Windows', device_type: 'Desktop', ip_address: '127.0.0.1', last_active: new Date().toISOString(), is_current: true },
+      { id: 'mock-phone', device: 'Safari on iPhone', device_type: 'Mobile', ip_address: '192.168.1.5', last_active: new Date(Date.now() - 3600_000).toISOString(), is_current: false },
+    ];
+    return of({ success: true, data }).pipe(delay(300));
+  }
+
+  revokeSession(_id: string): Observable<ApiResponse<null>> {
+    return of({ success: true, data: null }).pipe(delay(200));
+  }
+
+  logoutOthers(): Observable<ApiResponse<{ revoked: number }>> {
+    return of({ success: true, data: { revoked: 1 } }).pipe(delay(200));
   }
 }

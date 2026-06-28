@@ -1,16 +1,18 @@
-﻿import { Component, OnInit, signal, inject } from '@angular/core';
+﻿import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
+import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { AuthStore } from '../../core/stores/auth.store';
-import { AuthUser } from '../../core/models/user.model';
+import { AuthUser, DeviceSession } from '../../core/models/user.model';
+import { DataService } from '../../core/services/data.service';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [ButtonModule, TagModule, ToastModule],
+  imports: [ButtonModule, TagModule, ToastModule, TooltipModule],
   providers: [MessageService],
   styles: [`
     :host { display:block; padding:16px; max-width:600px; }
@@ -40,6 +42,19 @@ import { AuthUser } from '../../core/models/user.model';
     .role-field_agent { background:rgba(76,175,80,.15);   color:#2E7D32; }
     @media(max-width:480px) { .info-grid { grid-template-columns:1fr; }
       .info-cell:nth-child(odd) { border-right:none; } }
+
+    .section-head { padding:16px 20px; border-bottom:1px solid var(--p-surface-border);
+                    display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .section-title2 { font-weight:700; font-size:0.98rem; }
+    .device-row { display:flex; align-items:center; gap:14px; padding:14px 20px;
+                  border-bottom:1px solid var(--p-surface-border); }
+    .device-row:last-child { border-bottom:none; }
+    .device-icon { font-size:1.4rem; color:var(--p-primary-color); width:24px; text-align:center; }
+    .device-name { font-weight:600; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .device-meta { font-size:0.8rem; color:var(--p-text-muted-color); margin-top:2px; }
+    .this-badge { display:inline-block; font-size:0.68rem; font-weight:700; text-transform:uppercase;
+                  letter-spacing:.04em; padding:2px 8px; border-radius:10px;
+                  background:var(--p-primary-100); color:var(--p-primary-700); }
   `],
   template: `
     <p-toast />
@@ -87,14 +102,57 @@ import { AuthUser } from '../../core/models/user.model';
                     (onClick)="logout()"></p-button>
         </div>
       </div>
+
+      <!-- Active devices (like WhatsApp's linked devices) -->
+      <div class="profile-card" style="margin-top:20px">
+        <div class="section-head">
+          <span class="section-title2">Active Devices</span>
+          @if (otherCount() > 0) {
+            <p-button label="Log out all others" icon="pi pi-sign-out" severity="danger"
+                      [text]="true" size="small" [loading]="busyAll()" (onClick)="logoutOthers()" />
+          }
+        </div>
+        @if (loadingSessions()) {
+          <div style="padding:24px;text-align:center;color:var(--p-text-muted-color)">
+            <i class="pi pi-spin pi-spinner" style="font-size:1.4rem"></i>
+          </div>
+        } @else if (sessions().length === 0) {
+          <div style="padding:20px;color:var(--p-text-muted-color);font-size:0.88rem">No active sessions found.</div>
+        } @else {
+          @for (s of sessions(); track s.id) {
+            <div class="device-row">
+              <i class="pi {{ deviceIcon(s.device_type) }} device-icon"></i>
+              <div style="flex:1;min-width:0">
+                <div class="device-name">
+                  {{ s.device }}
+                  @if (s.is_current) { <span class="this-badge">This device</span> }
+                </div>
+                <div class="device-meta">{{ s.device_type }} · {{ s.ip_address || '—' }} · active {{ relative(s.last_active) }}</div>
+              </div>
+              @if (!s.is_current) {
+                <p-button icon="pi pi-sign-out" [text]="true" [rounded]="true" severity="danger"
+                          pTooltip="Log out this device" [loading]="busyId() === s.id" (onClick)="revoke(s)" />
+              }
+            </div>
+          }
+        }
+      </div>
     }
   `,
 })
 export class ProfileComponent implements OnInit {
   readonly router = inject(Router);
   private  msg    = inject(MessageService);
+  private  data   = inject(DataService);
 
   user = signal<AuthUser | null>(null);
+
+  // Active devices / sessions
+  protected readonly sessions = signal<DeviceSession[]>([]);
+  protected readonly loadingSessions = signal(true);
+  protected readonly busyId = signal<string | null>(null);
+  protected readonly busyAll = signal(false);
+  protected readonly otherCount = computed(() => this.sessions().filter(s => !s.is_current).length);
 
   initials = () => {
     const u = this.user();
@@ -113,10 +171,62 @@ export class ProfileComponent implements OnInit {
 
   ngOnInit() {
     this.user.set(AuthStore.user());
+    this.loadSessions();
   }
 
   logout() {
     AuthStore.clear();
     this.router.navigate(['/login']);
+  }
+
+  private loadSessions(): void {
+    this.loadingSessions.set(true);
+    this.data.auth.sessions().subscribe({
+      next: (r) => { this.sessions.set(r.data); this.loadingSessions.set(false); },
+      error: () => this.loadingSessions.set(false),
+    });
+  }
+
+  protected revoke(s: DeviceSession): void {
+    this.busyId.set(s.id);
+    this.data.auth.revokeSession(s.id).subscribe({
+      next: () => {
+        this.busyId.set(null);
+        this.msg.add({ severity: 'success', summary: 'Device logged out', detail: s.device, life: 2500 });
+        this.loadSessions();
+      },
+      error: () => {
+        this.busyId.set(null);
+        this.msg.add({ severity: 'error', summary: 'Could not log out that device', life: 2500 });
+      },
+    });
+  }
+
+  protected logoutOthers(): void {
+    this.busyAll.set(true);
+    this.data.auth.logoutOthers().subscribe({
+      next: (r) => {
+        this.busyAll.set(false);
+        this.msg.add({ severity: 'success', summary: 'Logged out other devices', detail: `${r.data.revoked} device(s)`, life: 2500 });
+        this.loadSessions();
+      },
+      error: () => {
+        this.busyAll.set(false);
+        this.msg.add({ severity: 'error', summary: 'Action failed', life: 2500 });
+      },
+    });
+  }
+
+  protected deviceIcon(type: string): string {
+    return type === 'Mobile' ? 'pi-mobile' : type === 'Tablet' ? 'pi-tablet' : 'pi-desktop';
+  }
+
+  protected relative(iso: string): string {
+    const m = Math.floor((Date.now() - Date.parse(iso)) / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
   }
 }

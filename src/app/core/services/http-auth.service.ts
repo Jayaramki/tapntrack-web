@@ -3,8 +3,8 @@ import { Injectable } from '@angular/core';
 import { Observable, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
-import { AuthUser, RegisterPayload } from '../models/user.model';
-import { BaseAuthService } from './base-auth.service';
+import { AuthUser, RegisterPayload, DeviceSession } from '../models/user.model';
+import { BaseAuthService, SessionMeta } from './base-auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class HttpAuthService extends BaseAuthService {
@@ -62,5 +62,21 @@ export class HttpAuthService extends BaseAuthService {
       current_password: current,
       new_password: newPass,
     });
+  }
+
+  reauth(password: string): Observable<ApiResponse<SessionMeta>> {
+    return this.http.post<ApiResponse<SessionMeta>>(`${this.authUrl}/reauth`, { password });
+  }
+
+  sessions(): Observable<ApiResponse<DeviceSession[]>> {
+    return this.http.get<ApiResponse<DeviceSession[]>>(`${this.authUrl}/sessions`);
+  }
+
+  revokeSession(id: string): Observable<ApiResponse<null>> {
+    return this.http.delete<ApiResponse<null>>(`${this.authUrl}/sessions/${id}`);
+  }
+
+  logoutOthers(): Observable<ApiResponse<{ revoked: number }>> {
+    return this.http.post<ApiResponse<{ revoked: number }>>(`${this.authUrl}/sessions/logout-others`, {});
   }
 }

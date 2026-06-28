@@ -17,7 +17,20 @@ export interface AuthUser extends User {
   tenant_slug?: string | null;
   hide_balance?: boolean;
   permissions: string[];
+  // Session policy for the SPA's idle/absolute warning timers.
+  idle_timeout_minutes?: number;
+  absolute_expires_at?: string; // ISO; the absolute (hard) logout deadline
   // No token field: auth is an httpOnly session cookie (Sanctum SPA), never in JS.
+}
+
+/** An active login (device) for the current user. */
+export interface DeviceSession {
+  id: string;
+  device: string;                              // "Chrome on Windows"
+  device_type: 'Mobile' | 'Tablet' | 'Desktop';
+  ip_address: string | null;
+  last_active: string;                         // ISO
+  is_current: boolean;
 }
 
 /** Self-signup payload — creates a tenant + its first tenant_admin + starter book. */
